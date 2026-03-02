@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operador - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+                <p>Logística</p>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="dashboard-operador.html" class="menu-link active">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="etiquetas.html" class="menu-link">
+                    <i class="fas fa-tags"></i>
+                    <span>Etiquetas</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Dashboard Operador</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Operador</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- KPI Cards -->
+                <div class="kpi-row">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalAtrasados">0</h3>
+                            <p>Containers Atrasados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalChegados">0</h3>
+                            <p>Containers que Chegaram</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #00469B 0%, #00336F 100%);">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalPrevistos">0</h3>
+                            <p>Containers Previstos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Containers -->
+                <div style="margin-top: 32px;">
+                    <h2 style="color: #00469B; margin-bottom: 20px;">Containers Pendentes</h2>
+                    <div id="containerCards" class="container-cards-grid">
+                        <!-- Cards serão inseridos aqui via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Imprimir Etiqueta -->
+    <div id="modalImprimirEtiqueta" class="modal">
+        <div class="modal-content">
+            <h2>Imprimir Etiqueta</h2>
+            <p>SJ: <strong id="modalEtiquetaSJ"></strong></p>
+            <p>Conteúdo: <strong id="modalEtiquetaConteudo"></strong></p>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="quantidadeEtiquetas">QUANTIDADE DE ETIQUETAS *</label>
+                <input type="number" id="quantidadeEtiquetas" min="1" value="1" required style="width: 100%;">
+            </div>
+            
+            <div id="mensagemErroEtiqueta" class="error-message"></div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="fecharModalEtiqueta()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarImpressaoEtiqueta()">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Chegada -->
+    <div id="modalRegistrarChegada" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Chegada</h2>
+            <p>Container <strong id="modalContainer"></strong> da SJ <strong id="modalSJ"></strong></p>
+            
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label for="responsavelChegada">RESPONSÁVEL *</label>
+                    <input type="text" id="responsavelChegada" required style="text-transform: uppercase;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cteChegada">CTE *</label>
+                    <input type="text" id="cteChegada" required style="text-transform: uppercase;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="docaChegada">DOCA *</label>
+                    <select id="docaChegada" required>
+                        <option value="">Selecione</option>
+                        <option value="1">Doca 1</option>
+                        <option value="2">Doca 2</option>
+                        <option value="3">Doca 3</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="horaInicioChegada">HORA INÍCIO *</label>
+                    <input type="time" id="horaInicioChegada" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="horaFinalChegada">HORA FINAL *</label>
+                    <input type="time" id="horaFinalChegada" required>
+                </div>
+            </div>
+            
+            <div id="mensagemErroChegada" class="error-message"></div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="fecharModalChegada()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarChegada()">Confirmar Chegada</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="script.js"></script>
+    <script src="dashboard-operador.js"></script>
+</body>
+</html>

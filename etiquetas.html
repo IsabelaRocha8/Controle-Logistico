@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiquetas - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+                <p>Logística</p>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="dashboard-operador.html" class="menu-link">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="etiquetas.html" class="menu-link active">
+                    <i class="fas fa-tags"></i>
+                    <span>Etiquetas</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Etiquetas Impressas</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Operador</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Filtros -->
+                <div class="filters-container">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label for="filtroDataInicioEtiqueta">Data Início</label>
+                            <input type="date" id="filtroDataInicioEtiqueta">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filtroDataFimEtiqueta">Data Fim</label>
+                            <input type="date" id="filtroDataFimEtiqueta">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filtroSJEtiqueta">SJ</label>
+                            <input type="text" id="filtroSJEtiqueta" placeholder="Digite o SJ" style="text-transform: uppercase;">
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-primary" onclick="aplicarFiltrosEtiquetas()">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <button class="btn btn-secondary" onclick="limparFiltrosEtiquetas()">
+                                <i class="fas fa-eraser"></i> Limpar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Etiquetas -->
+                <div style="margin-top: 32px;">
+                    <div id="etiquetasCards" class="container-cards-grid">
+                        <!-- Cards serão inseridos aqui via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="script.js"></script>
+    <script src="etiquetas.js"></script>
+</body>
+</html>

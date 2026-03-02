@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Impressões NIL - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="index.html" class="menu-link">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="cadastro.html" class="menu-link">
+                    <i class="fas fa-ship"></i>
+                    <span>Cadastro Marítimo</span>
+                </a>
+                <a href="cadastro-aereo.html" class="menu-link">
+                    <i class="fas fa-plane"></i>
+                    <span>Cadastro Aéreo</span>
+                </a>
+                <a href="historico.html" class="menu-link">
+                    <i class="fas fa-history"></i>
+                    <span>Histórico</span>
+                </a>
+                <a href="previsao.html" class="menu-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Previsão de Chegada</span>
+                </a>
+                <a href="nil.html" class="menu-link">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Emitir NIL</span>
+                </a>
+                <a href="historicoNIL.html" class="menu-link active">
+                    <i class="fas fa-print"></i>
+                    <span>Histórico NIL</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="header">
+                <div class="header-left">
+                    <h1>Histórico de Impressões NIL</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Admin</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>SJ</th>
+                                <th>Container</th>
+                                <th>Usuário</th>
+                                <th>Data</th>
+                                <th>Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistoricoNIL">
+                            <tr>
+                                <td colspan="5" class="no-data">Nenhuma impressão registrada</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarHistoricoNIL();
+        });
+
+        function carregarHistoricoNIL() {
+            const historico = JSON.parse(localStorage.getItem('historicoImpressaoNIL')) || [];
+            const tbody = document.getElementById('tabelaHistoricoNIL');
+            
+            if (historico.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhuma impressão registrada</td></tr>';
+                return;
+            }
+            
+            const historicoOrdenado = historico.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            tbody.innerHTML = '';
+            
+            historicoOrdenado.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.sj}</td>
+                    <td>${item.container}</td>
+                    <td>${item.usuario}</td>
+                    <td>${item.data}</td>
+                    <td>${item.hora}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

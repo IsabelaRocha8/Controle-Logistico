@@ -1,0 +1,83 @@
+# INSTALAÇÃO RÁPIDA - BANCO COMPARTILHADO
+
+## Passo 1: Instalar Node.js
+- Baixe: https://nodejs.org/
+- Instale no computador que será o servidor
+
+## Passo 2: Iniciar o Servidor
+1. Abra o Prompt de Comando (cmd)
+2. Navegue até a pasta:
+   ```
+   cd "M:\Centro de Manufatura制造中心\Estoque e Logistica仓储物流\SITE NIL"
+   ```
+3. Inicie o servidor:
+   ```
+   node server-simples.js
+   ```
+
+## Passo 3: Acessar o Sistema
+
+### No computador servidor:
+```
+http://localhost:8080
+```
+
+### Em outros computadores da rede:
+1. Descubra o IP do servidor:
+   - No servidor, abra cmd e digite: `ipconfig`
+   - Anote o IPv4 (exemplo: 192.168.1.100)
+
+2. Acesse no navegador:
+   ```
+   http://192.168.1.100:8080
+   ```
+
+## Passo 4: Liberar Firewall (se necessário)
+1. Painel de Controle > Firewall do Windows
+2. Configurações Avançadas
+3. Nova Regra de Entrada
+4. Porta > TCP > 8080
+5. Permitir conexão
+
+## Como Funciona
+
+- Todos os dados são salvos em: `database/dados.json`
+- Todos os usuários leem e escrevem no mesmo arquivo
+- Atualização automática a cada 5 segundos
+- Fallback para localStorage se houver erro
+
+## Manter Servidor Sempre Ligado
+
+### Opção 1: Deixar cmd aberto
+- Mantenha a janela do cmd aberta
+
+### Opção 2: Criar atalho de inicialização
+1. Crie um arquivo `iniciar.bat`:
+   ```
+   @echo off
+   cd "M:\Centro de Manufatura制造中心\Estoque e Logistica仓储物流\SITE NIL"
+   node server-simples.js
+   pause
+   ```
+2. Coloque na pasta de inicialização do Windows
+
+## Backup
+Copie o arquivo:
+```
+M:\Centro de Manufatura制造中心\Estoque e Logistica仓储物流\SITE NIL\database\dados.json
+```
+
+## Solução de Problemas
+
+### "node não é reconhecido"
+- Reinstale o Node.js
+- Reinicie o computador
+
+### Não consegue acessar de outro computador
+- Verifique o IP do servidor
+- Verifique o firewall
+- Certifique-se que estão na mesma rede
+
+### Dados não sincronizam
+- Aguarde 5 segundos (atualização automática)
+- Recarregue a página (F5)

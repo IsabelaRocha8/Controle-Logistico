@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+                <p>Logística</p>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="index.html" class="menu-link active">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="cadastro.html" class="menu-link">
+                    <i class="fas fa-ship"></i>
+                    <span>Cadastro Marítimo</span>
+                </a>
+                <a href="cadastro-aereo.html" class="menu-link">
+                    <i class="fas fa-plane"></i>
+                    <span>Cadastro Aéreo</span>
+                </a>
+                <a href="historico.html" class="menu-link">
+                    <i class="fas fa-history"></i>
+                    <span>Histórico</span>
+                </a>
+                <a href="previsao.html" class="menu-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Previsão de Chegada</span>
+                </a>
+                <a href="nil.html" class="menu-link">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Emitir NIL</span>
+                </a>
+                <a href="historicoNIL.html" class="menu-link">
+                    <i class="fas fa-print"></i>
+                    <span>Histórico NIL</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Dashboard - Controle de Containers</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Admin</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- KPI Cards -->
+                <div class="kpi-row">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #00469B 0%, #00336F 100%);">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalChegados">0</h3>
+                            <p>Total de Containers que Chegaram</p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon green">
+                            <i class="fas fa-calendar-week"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="containersSemana">0</h3>
+                            <p>Containers na Semana</p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon orange">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="containersMes">0</h3>
+                            <p>Containers no Mês</p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon purple">
+                            <i class="fas fa-warehouse"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="docaMaisMovimentada">-</h3>
+                            <p>Doca Mais Movimentada</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Novos Cards -->
+                <div class="kpi-row">
+                    <div class="kpi-card">
+                        <div class="kpi-icon blue">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="mediaDiaria">0</h3>
+                            <p>Média Containers/Dia</p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon orange">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="containerMaisDemorado" style="font-size: 20px;">-</h3>
+                            <p>Container Mais Demorado</p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon green">
+                            <i class="fas fa-hourglass-end"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="sjMaisDemorada" style="font-size: 20px;">-</h3>
+                            <p>SJ Mais Demorada</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon purple">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="previsoesHoje">0</h3>
+                            <p>Previsões para Hoje</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Chegadas -->
+                <div class="kpi-row">
+                    <div class="kpi-card">
+                        <div class="kpi-icon green">
+                            <i class="fas fa-truck-loading"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="chegadasHoje">0</h3>
+                            <p>Containers que Chegaram Hoje</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalAtrasados">0</h3>
+                            <p>Total Atrasados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalEmDia">0</h3>
+                            <p>Total Em Dia</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <h3 id="totalAdiantados">0</h3>
+                            <p>Total Adiantados</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botão Emitir NIL -->
+                <div style="margin-bottom: 28px;">
+                    <a href="nil.html" class="btn btn-primary" style="text-decoration: none; display: inline-flex;">
+                        <i class="fas fa-file-alt"></i>
+                        Emitir NIL
+                    </a>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <h3>Containers por Dia</h3>
+                            <span>Últimos 7 dias</span>
+                        </div>
+                        <canvas id="chartDia"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <h3>Containers por Semana</h3>
+                            <span>Últimas 4 semanas</span>
+                        </div>
+                        <canvas id="chartSemana"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <h3>Containers por Mês</h3>
+                            <span>Últimos 6 meses</span>
+                        </div>
+                        <canvas id="chartMes"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <h3>Movimentação por Doca</h3>
+                            <span>Hoje</span>
+                        </div>
+                        <canvas id="chartDoca"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Rankings -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <h3>Top Responsáveis</h3>
+                            <span>Mês atual</span>
+                        </div>
+                        <canvas id="chartResponsaveis"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <h3>Top Transportadoras</h3>
+                            <span>Mês atual</span>
+                        </div>
+                        <canvas id="chartTransportadoras"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro Marítimo - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="index.html" class="menu-link">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="cadastro.html" class="menu-link active">
+                    <i class="fas fa-ship"></i>
+                    <span>Cadastro Marítimo</span>
+                </a>
+                <a href="cadastro-aereo.html" class="menu-link">
+                    <i class="fas fa-plane"></i>
+                    <span>Cadastro Aéreo</span>
+                </a>
+                <a href="historico.html" class="menu-link">
+                    <i class="fas fa-history"></i>
+                    <span>Histórico</span>
+                </a>
+                <a href="previsao.html" class="menu-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Previsão de Chegada</span>
+                </a>
+                <a href="nil.html" class="menu-link">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Emitir NIL</span>
+                </a>
+                <a href="historicoNIL.html" class="menu-link">
+                    <i class="fas fa-print"></i>
+                    <span>Histórico NIL</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Cadastro Marítimo</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Admin</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="dashboard-content">
+                <div class="form-container">
+                    <form id="formCadastroMaritimo">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="sj">SJ *</label>
+                                <input type="text" id="sj" required style="text-transform: uppercase;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="container">CONTAINER *</label>
+                                <input type="text" id="container" maxlength="11" required style="text-transform: uppercase;">
+                                <small class="field-hint">Deve conter exatamente 11 caracteres</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cte">CTE *</label>
+                                <input type="text" id="cte" required style="text-transform: uppercase;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="doca">DOCA *</label>
+                                <select id="doca" required>
+                                    <option value="">Selecione</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="horaInicio">HORA INÍCIO *</label>
+                                <input type="time" id="horaInicio" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="horaFinal">HORA FINAL *</label>
+                                <input type="time" id="horaFinal" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="responsavel">RESPONSÁVEL *</label>
+                                <input type="text" id="responsavel" required style="text-transform: uppercase;">
+                            </div>
+                        </div>
+
+                        <div id="mensagemErro" class="error-message"></div>
+                        <div id="mensagemSucesso" class="success-message"></div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-info" onclick="pesquisarSJ()">
+                                <i class="fas fa-search"></i> Pesquisar SJ
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="limparFormulario('formCadastroMaritimo')">
+                                <i class="fas fa-eraser"></i> Limpar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="storage.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

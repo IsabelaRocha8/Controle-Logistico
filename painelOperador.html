@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Operacional - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="painelOperador.html" class="menu-link active">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Painel Operacional</span>
+                </a>
+                <a href="cadastro.html" class="menu-link">
+                    <i class="fas fa-ship"></i>
+                    <span>Cadastro Marítimo</span>
+                </a>
+                <a href="cadastro-aereo.html" class="menu-link">
+                    <i class="fas fa-plane"></i>
+                    <span>Cadastro Aéreo</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Painel Operacional</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Operador</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="dashboard-content">
+                <!-- Seção 1: Chegadas de Hoje -->
+                <div class="section-container">
+                    <div class="section-header">
+                        <h2><i class="fas fa-calendar-day"></i> TODAS AS CHEGADAS PREVISTAS PARA HOJE</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SJ</th>
+                                    <th>Container</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaChegadasHoje">
+                                <tr>
+                                    <td colspan="4" class="no-data">Nenhuma chegada prevista para hoje.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Todas as Previsões -->
+                <div class="section-container">
+                    <div class="section-header">
+                        <h2><i class="fas fa-list"></i> TODAS AS PREVISÕES CADASTRADAS</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SJ</th>
+                                    <th>Container</th>
+                                    <th>Status</th>
+                                    <th>Data Previsão</th>
+                                    <th>Usuário</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaTodasPrevisoes">
+                                <tr>
+                                    <td colspan="5" class="no-data">Nenhuma previsão cadastrada</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Registrar Chegada -->
+    <div id="modalChegada" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Registrar Chegada</h3>
+                <span class="modal-close" onclick="fecharModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="sjChegada">
+                <input type="hidden" id="containerChegada">
+                
+                <div class="form-group">
+                    <label for="docaChegada">DOCA *</label>
+                    <select id="docaChegada" required>
+                        <option value="">Selecione</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="responsavelChegada">RESPONSÁVEL *</label>
+                    <input type="text" id="responsavelChegada" required style="text-transform: uppercase;">
+                </div>
+
+                <div class="form-group">
+                    <label for="horaChegada">HORA *</label>
+                    <input type="time" id="horaChegada" required>
+                </div>
+
+                <div id="mensagemErroModal" class="error-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarChegada()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="painelOperador.js"></script>
+</body>
+</html>

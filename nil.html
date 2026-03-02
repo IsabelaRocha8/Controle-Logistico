@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIL - Notificação Incidente Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nil.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="index.html" class="menu-link">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="cadastro.html" class="menu-link">
+                    <i class="fas fa-ship"></i>
+                    <span>Cadastro Marítimo</span>
+                </a>
+                <a href="cadastro-aereo.html" class="menu-link">
+                    <i class="fas fa-plane"></i>
+                    <span>Cadastro Aéreo</span>
+                </a>
+                <a href="historico.html" class="menu-link">
+                    <i class="fas fa-history"></i>
+                    <span>Histórico</span>
+                </a>
+                <a href="previsao.html" class="menu-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Previsão de Chegada</span>
+                </a>
+                <a href="nil.html" class="menu-link active">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Emitir NIL</span>
+                </a>
+                <a href="historicoNIL.html" class="menu-link">
+                    <i class="fas fa-print"></i>
+                    <span>Histórico NIL</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="header">
+                <div class="header-left">
+                    <h1>NIL - Notificação Incidente Logístico</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Admin</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="nil-search-box">
+                    <h3>Buscar Processo (SJ)</h3>
+                    <div class="search-group">
+                        <input type="text" id="inputSJ" placeholder="Digite o número da SJ" style="text-transform: uppercase;">
+                        <button class="btn btn-primary" onclick="buscarSJ()">
+                            <i class="fas fa-search"></i> Buscar SJ
+                        </button>
+                    </div>
+                    <div id="mensagemBusca" class="search-message"></div>
+                </div>
+
+                <div id="nilFormulario" style="display: none;">
+                    <div class="nil-actions" style="margin-bottom: 20px;">
+                        <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </button>
+                        <button class="btn btn-info" onclick="gerarNIL()">
+                            <i class="fas fa-file-pdf"></i> Gerar NIL
+                        </button>
+                        <button class="btn btn-primary" onclick="imprimirNIL()">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                    </div>
+
+                    <!-- DOCUMENTO NIL -->
+                    <div class="nil-document-formal">
+                        <!-- CABEÇALHO -->
+                        <table class="nil-table">
+                            <tr>
+                                <td style="width: 15%; text-align: center; padding: 10px;">
+                                    <div style="font-size: 48px; color: #003366; font-weight: bold;">XCMG</div>
+                                </td>
+                                <td style="width: 60%; text-align: center; padding: 10px;">
+                                    <div style="font-size: 14px; font-weight: bold; color: #003366;">
+                                        NIL - NOTIFICAÇÃO INCIDENTE LOGÍSTICO<br>
+                                        DESCARREGAMENTO E FÍSICA
+                                    </div>
+                                </td>
+                                <td style="width: 25%; padding: 5px;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="border: 1px solid #000; padding: 3px; font-size: 10px; text-align: center;">FORM074-2</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="border: 1px solid #000; padding: 3px; font-size: 10px; text-align: center;">VER.2</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="border: 1px solid #000; padding: 3px; font-size: 10px; text-align: center;">30/01/2026</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="border: 1px solid #000; padding: 3px; font-size: 10px; text-align: center;" id="dataImpressaoNIL">IMPRESSÃO:</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- LINHA IDENTIFICAÇÃO -->
+                        <table class="nil-table">
+                            <tr>
+                                <td style="width: 33%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">LÍDER / ANALISTA:</strong><br>
+                                    <input type="text" id="liderAnalista" style="width: 100%; border: none; font-size: 11px; text-transform: uppercase;">
+                                </td>
+                                <td style="width: 34%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">RESPONSÁVEIS DESCARREGAMENTOS:</strong><br>
+                                    <input type="text" id="responsaveisDescarregamento" readonly style="width: 100%; border: none; font-size: 11px; background: #f0f0f0;">
+                                </td>
+                                <td style="width: 33%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">DATA DA CONFERÊNCIA FÍSICA:</strong><br>
+                                    <input type="date" id="dataConferencia" style="width: 100%; border: none; font-size: 11px;">
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- INFORMAÇÕES GERAIS -->
+                        <table class="nil-table">
+                            <tr>
+                                <td style="width: 25%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">PROCESSO:</strong><br>
+                                    <input type="text" id="processoSJ" readonly style="width: 100%; border: none; font-size: 11px; background: #f0f0f0;">
+                                </td>
+                                <td style="width: 25%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">TRANSPORTADORA:</strong><br>
+                                    <input type="text" id="transportadora" style="width: 100%; border: none; font-size: 11px; text-transform: uppercase;">
+                                </td>
+                                <td style="width: 25%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">DATA PRIMEIRO LANÇAMENTO:</strong><br>
+                                    <input type="text" id="dataPrimeiroLancamento" readonly style="width: 100%; border: none; font-size: 11px; background: #f0f0f0;">
+                                </td>
+                                <td style="width: 25%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">PRODUTO:</strong><br>
+                                    <input type="text" id="produto" value="CKD PARTS X AIR" style="width: 100%; border: none; font-size: 11px; text-transform: uppercase;">
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- SEÇÃO AZUL - INFORMAÇÕES DESCARREGAMENTO -->
+                        <table class="nil-table">
+                            <tr>
+                                <td colspan="7" style="background: #003366; color: white; text-align: center; padding: 8px; font-weight: bold; font-size: 12px;">
+                                    INFORMAÇÕES DESCARREGAMENTO
+                                </td>
+                            </tr>
+                            <tr style="background: #e0e0e0; font-weight: bold; font-size: 10px; text-align: center;">
+                                <td style="border: 1px solid #000; padding: 5px; width: 5%;">Nº</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 20%;">Nº CONTAINER</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 15%;">Nº CT-E</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 12%;">QTDE. CAIXA</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 12%;">HORA INÍCIO</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 12%;">HORA FINAL</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 24%;">CONFERÊNCIA</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">1</td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="numeroContainer" readonly style="width: 100%; border: none; font-size: 10px; background: #f0f0f0;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="numeroCTE" readonly style="width: 100%; border: none; font-size: 10px; background: #f0f0f0;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="number" id="qtdeCaixa" style="width: 100%; border: none; font-size: 10px;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="horaInicio" readonly style="width: 100%; border: none; font-size: 10px; background: #f0f0f0;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="horaFinal" readonly style="width: 100%; border: none; font-size: 10px; background: #f0f0f0;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="conferencia" style="width: 100%; border: none; font-size: 10px; text-transform: uppercase;"></td>
+                            </tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">2</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">3</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">4</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">5</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">6</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">7</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">8</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">9</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                            <tr><td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 10px;">10</td><td colspan="6" style="border: 1px solid #000; padding: 5px;"></td></tr>
+                        </table>
+
+                        <!-- QUANTIDADE E OBSERVAÇÕES -->
+                        <table class="nil-table">
+                            <tr>
+                                <td style="width: 50%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">QUANTIDADE DE CAIXA / VOLUME:</strong>
+                                </td>
+                                <td style="width: 50%; border: 1px solid #000; padding: 5px;">
+                                    <strong style="font-size: 10px;">OBSERVAÇÕES:</strong><br>
+                                    <textarea id="observacoes" style="width: 100%; border: none; font-size: 10px; height: 40px; text-transform: uppercase;"></textarea>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- SEÇÃO AZUL - OCORRÊNCIAS -->
+                        <table class="nil-table">
+                            <tr>
+                                <td colspan="4" style="background: #003366; color: white; text-align: center; padding: 8px; font-weight: bold; font-size: 12px;">
+                                    OCORRÊNCIAS
+                                </td>
+                            </tr>
+                            <tr style="background: #e0e0e0; font-weight: bold; font-size: 10px; text-align: center;">
+                                <td style="border: 1px solid #000; padding: 5px; width: 15%;">CÓDIGO</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 15%;">QTD. FATURADA</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 15%;">QTD. FÍSICA</td>
+                                <td style="border: 1px solid #000; padding: 5px; width: 55%;">DESCRIÇÃO OCORRÊNCIA</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="codigoOcorrencia" style="width: 100%; border: none; font-size: 10px; text-transform: uppercase;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="number" id="qtdFaturada" style="width: 100%; border: none; font-size: 10px;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="number" id="qtdFisica" style="width: 100%; border: none; font-size: 10px;"></td>
+                                <td style="border: 1px solid #000; padding: 5px;"><input type="text" id="descricaoOcorrencia" style="width: 100%; border: none; font-size: 10px; text-transform: uppercase;"></td>
+                            </tr>
+                            <tr><td colspan="4" style="border: 1px solid #000; padding: 15px;"></td></tr>
+                            <tr><td colspan="4" style="border: 1px solid #000; padding: 15px;"></td></tr>
+                        </table>
+
+                        <!-- REGISTROS FINAIS -->
+                        <table class="nil-table">
+                            <tr>
+                                <td style="width: 50%; border: 1px solid #000; padding: 8px; font-size: 10px;">
+                                    <strong>REGISTRO DAS OCORRÊNCIAS EM FOTO?</strong><br>
+                                    <label><input type="radio" name="registroFoto" value="SIM"> SIM</label>
+                                    <label style="margin-left: 20px;"><input type="radio" name="registroFoto" value="NÃO"> NÃO</label>
+                                </td>
+                                <td style="width: 50%; border: 1px solid #000; padding: 8px; font-size: 10px;">
+                                    <strong>DIVULGAÇÃO DAS OCORRÊNCIAS:</strong><br>
+                                    <label><input type="checkbox" name="divulgacao" value="EMAIL"> E-MAIL</label>
+                                    <label style="margin-left: 10px;"><input type="checkbox" name="divulgacao" value="IMPRESSO"> IMPRESSO</label><br>
+                                    <label><input type="checkbox" name="divulgacao" value="WHATSAPP"> WHATSAPP</label>
+                                    <label style="margin-left: 10px;"><input type="checkbox" name="divulgacao" value="OUTROS"> OUTROS _________</label>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- SEÇÃO AZUL - ENCERRAMENTO -->
+                        <table class="nil-table">
+                            <tr>
+                                <td colspan="2" style="background: #003366; color: white; text-align: center; padding: 8px; font-weight: bold; font-size: 12px;">
+                                    ENCERRAMENTO
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 70%; border: 1px solid #000; padding: 8px; font-size: 10px;">
+                                    <strong>ASSINATURA RESPONSÁVEL ENCERRAMENTO:</strong> ______________________________________
+                                </td>
+                                <td style="width: 30%; border: 1px solid #000; padding: 8px; font-size: 10px;">
+                                    <strong>DATA:</strong> ______________________
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- RODAPÉ IMPRESSÃO -->
+                        <div id="rodapeImpressaoNIL" style="margin-top: 20px; text-align: center; font-size: 10px; color: #666; display: none;">
+                            <p id="textoRodapeImpressaoNIL"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="nil.js"></script>
+</body>
+</html>

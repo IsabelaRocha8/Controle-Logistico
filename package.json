@@ -1,0 +1,9 @@
+{
+  "name": "site-nil-logistica",
+  "version": "1.0.0",
+  "description": "Sistema de Controle Logístico - Banco Compartilhado",
+  "main": "server-simples.js",
+  "scripts": {
+    "start": "node server-simples.js"
+  }
+}
