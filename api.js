@@ -1,41 +1,51 @@
-// Configuração da URL da API - Aponta para a Vercel
-const API_URL = '/api';
+const API_URL = "/api";
 
-// Função genérica para buscar dados
+async function requestJson(path, options) {
+  const res = await fetch(`${API_URL}/${path}`, options);
+  const text = await res.text();
+
+  let data;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(`Resposta não é JSON: ${text}`);
+  }
+
+  if (!res.ok) {
+    const msg = data?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
 async function obterDados(chave) {
-    try {
-        const response = await fetch(`${API_URL}/${chave}`);
-        if (!response.ok) throw new Error('Erro na requisição ao servidor');
-        return await response.json();
-    } catch (error) {
-        console.error(`Erro ao obter ${chave}:`, error);
-        return [];
-    }
+  try {
+    return await requestJson(chave);
+  } catch (e) {
+    console.error(`Erro ao obter ${chave}:`, e);
+    return [];
+  }
 }
 
-// Função genérica para salvar dados
 async function adicionarDado(chave, dado) {
-    try {
-        const response = await fetch(`${API_URL}/${chave}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dado)
-        });
-        if (!response.ok) throw new Error('Erro ao salvar no servidor');
-        return await response.json();
-    } catch (error) {
-        console.error(`Erro ao adicionar em ${chave}:`, error);
-        throw error;
-    }
+  return await requestJson(chave, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dado),
+  });
 }
 
-// Funções específicas utilizadas pelo restante do sistema
-async function obterHistorico() { return await obterDados('historico'); }
-async function salvarHistorico(registro) { return await adicionarDado('historico', registro); }
+// API pública
+const obterHistorico = () => obterDados("historico");
+const salvarHistorico = (registro) => adicionarDado("historico", registro);
 
-async function obterPrevisoes() { return await obterDados('previsoes'); }
-async function salvarPrevisao(previsao) { return await adicionarDado('previsoes', previsao); }
+const obterPrevisoes = () => obterDados("previsoes");
+const salvarPrevisao = (previsao) => adicionarDado("previsoes", previsao);
 
-// Mantemos o localStorage APENAS para a sessão do usuário logado (opcional)
-function obterUsuarioLogado() { return localStorage.getItem('usuarioLogado'); }
-function definirUsuarioLogado(u) { localStorage.setItem('usuarioLogado', u); }
+const obterNILs = () => obterDados("nils");
+const salvarNIL = (nil) => adicionarDado("nils", nil);
+
+// Sessão
+const obterUsuarioLogado = () => localStorage.getItem("usuarioLogado");
+const definirUsuarioLogado = (u) => localStorage.setItem("usuarioLogado", u);
