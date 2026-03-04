@@ -3,7 +3,20 @@ document.addEventListener('DOMContentLoaded', function() {
     verificarLogin();
     inicializarPagina();
 });
+document.addEventListener("DOMContentLoaded", async function () {
+  verificarLogin();
 
+  const paginaAtual = window.location.pathname.split("/").pop();
+  const usuarioLogado = localStorage.getItem("usuarioLogado");
+
+  if (!usuarioLogado && paginaAtual !== "login.html") return;
+
+  if (window.DB?.init) {
+    await window.DB.init();
+  }
+
+  inicializarPagina();
+});
 // ================= VERIFICAR LOGIN =================
 function verificarLogin() {
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -914,7 +927,7 @@ function excluirRegistro() {
     const index = parseInt(modal.dataset.index);
     
     try {
-        DB.remover('historico', index);
+        DB.removerLocal('historico', index);
         fecharModalConfirmacao();
         carregarHistorico();
     } catch (error) {
