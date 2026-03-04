@@ -87,7 +87,7 @@ async function garantirTabelas() {
         console.error("Erro ao inicializar tabelas:", err);
         throw err;
     }
-}
+});
 
 app.get('/api/health', async (req, res) => {
     if (!sql || !dbConfig) {
