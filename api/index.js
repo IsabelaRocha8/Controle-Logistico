@@ -5,7 +5,6 @@ const { neon } = require("@neondatabase/serverless");
 require("dotenv").config();
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -17,13 +16,9 @@ function obterDatabaseUrl() {
     "POSTGRES_PRISMA_URL",
     "NEON_DATABASE_URL",
   ];
-
   for (const nome of candidatos) {
-    if (process.env[nome]) {
-      return { nome, valor: process.env[nome] };
-    }
+    if (process.env[nome]) return { nome, valor: process.env[nome] };
   }
-
   return null;
 }
 
@@ -38,7 +33,6 @@ async function garantirTabelas() {
       "URL do banco não encontrada. Configure DATABASE_URL ou POSTGRES_URL."
     );
   }
-
   if (tabelasInicializadas) return;
 
   await sql`
@@ -88,7 +82,7 @@ async function garantirTabelas() {
   tabelasInicializadas = true;
 }
 
-// Healthcheck
+// /api/health na Vercel
 app.get("/health", async (req, res) => {
   if (!sql || !dbConfig) {
     return res.status(500).json({
@@ -106,19 +100,10 @@ app.get("/health", async (req, res) => {
 
   try {
     await garantirTabelas();
-    const resultado = await sql`SELECT NOW() AS agora`;
-
-    res.json({
-      ok: true,
-      databaseEnv: dbConfig.nome,
-      now: resultado[0]?.agora || null,
-    });
+    const r = await sql`SELECT NOW() AS agora`;
+    res.json({ ok: true, databaseEnv: dbConfig.nome, now: r[0]?.agora ?? null });
   } catch (err) {
-    res.status(500).json({
-      ok: false,
-      databaseEnv: dbConfig.nome,
-      error: err.message,
-    });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 

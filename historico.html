@@ -150,16 +150,17 @@
         </div>
     </div>
 
-    <!-- <script src="storage.js"></script> -->
+    <script src="apiClient.js"></script>
+    <script src="storage.js"></script>
     <script src="script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const isAdmin = validarPermissaoAdmin();
-            const colunaAcoes = document.getElementById('colunaAcoes');
-            if (isAdmin && colunaAcoes) {
-                colunaAcoes.style.display = '';
-            }
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        const isAdmin = validarPermissaoAdmin();
+        const colunaAcoes = document.getElementById('colunaAcoes');
+        if (isAdmin && colunaAcoes) {
+            colunaAcoes.style.display = '';
+        }
+    });
     </script>
 </body>
 </html>
