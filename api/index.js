@@ -4,13 +4,42 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const sql = neon(process.env.DATABASE_URL);
+
+function obterDatabaseUrl() {
+    const candidatos = [
+        'DATABASE_URL',
+        'POSTGRES_URL',
+        'POSTGRES_URL_NON_POOLING',
+        'POSTGRES_PRISMA_URL',
+        'NEON_DATABASE_URL'
+    ];
+
+    for (const nome of candidatos) {
+        if (process.env[nome]) {
+            return { nome, valor: process.env[nome] };
+        }
+    }
+
+    return null;
+}
+
+const dbConfig = obterDatabaseUrl();
+const sql = dbConfig ? neon(dbConfig.valor) : null;
+let tabelasInicializadas = false;
 
 app.use(cors());
 app.use(express.json());
 
 // Função para garantir que todas as tabelas existam
 async function garantirTabelas() {
+    if (!sql) {
+        throw new Error('URL do banco não encontrada. Configure DATABASE_URL ou POSTGRES_URL na Vercel.');
+    }
+
+    if (tabelasInicializadas) {
+        return;
+    }
+
     try {
         await sql`
             CREATE TABLE IF NOT EXISTS historico (
@@ -53,10 +82,37 @@ async function garantirTabelas() {
                 dados TEXT NOT NULL
             );
         `;
+        tabelasInicializadas = true;
     } catch (err) {
         console.error("Erro ao inicializar tabelas:", err);
+        throw err;
     }
-}
+});
+
+app.get('/api/health', async (req, res) => {
+    if (!sql || !dbConfig) {
+        return res.status(500).json({
+            ok: false,
+            error: 'Variável do banco não encontrada no ambiente.',
+            expected: ['DATABASE_URL', 'POSTGRES_URL', 'POSTGRES_URL_NON_POOLING', 'POSTGRES_PRISMA_URL', 'NEON_DATABASE_URL']
+        });
+    }
+
+    try {
+        const resultado = await sql`SELECT NOW() AS agora`;
+        return res.json({
+            ok: true,
+            databaseEnv: dbConfig.nome,
+            now: resultado[0]?.agora || null
+        });
+    } catch (err) {
+        return res.status(500).json({
+            ok: false,
+            databaseEnv: dbConfig.nome,
+            error: err.message
+        });
+    }
+});
 
 // ROTAS DE HISTÓRICO
 app.get('/api/historico', async (req, res) => {
