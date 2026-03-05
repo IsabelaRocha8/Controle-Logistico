@@ -1,89 +1,15 @@
 const express = require("express");
 const cors = require("cors");
-const { neon } = require("@neondatabase/serverless");
-
 require("dotenv").config();
+
+const { sql, dbConfig, garantirTabelas } = require("../lib/db");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-function obterDatabaseUrl() {
-  const candidatos = [
-    "DATABASE_URL",
-    "POSTGRES_URL",
-    "POSTGRES_URL_NON_POOLING",
-    "POSTGRES_PRISMA_URL",
-    "NEON_DATABASE_URL",
-  ];
-  for (const nome of candidatos) {
-    if (process.env[nome]) return { nome, valor: process.env[nome] };
-  }
-  return null;
-}
-
-const dbConfig = obterDatabaseUrl();
-const sql = dbConfig ? neon(dbConfig.valor) : null;
-
-let tabelasInicializadas = false;
-
-async function garantirTabelas() {
-  if (!sql) {
-    throw new Error(
-      "URL do banco não encontrada. Configure DATABASE_URL ou POSTGRES_URL."
-    );
-  }
-  if (tabelasInicializadas) return;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS historico (
-      id SERIAL PRIMARY KEY,
-      sj TEXT NOT NULL,
-      container TEXT NOT NULL,
-      cte TEXT NOT NULL,
-      doca TEXT NOT NULL,
-      horaInicio TEXT,
-      horaFinal TEXT,
-      responsavel TEXT,
-      transportadora TEXT,
-      modalidade TEXT,
-      dataRegistro TEXT,
-      tempoMinutos INTEGER,
-      tempoFormatado TEXT
-    );
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS previsoesChegada (
-      id SERIAL PRIMARY KEY,
-      status TEXT NOT NULL,
-      sj TEXT NOT NULL,
-      conteudo TEXT,
-      container TEXT NOT NULL,
-      dataPrevisao TEXT,
-      transportadora TEXT,
-      usuario TEXT,
-      modalImportacao TEXT,
-      dataChegada TEXT
-    );
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS nilsGerados (
-      id SERIAL PRIMARY KEY,
-      numeroNIL TEXT NOT NULL,
-      data TEXT NOT NULL,
-      hora TEXT NOT NULL,
-      usuario TEXT NOT NULL,
-      dados TEXT NOT NULL
-    );
-  `;
-
-  tabelasInicializadas = true;
-}
-
-// /api/health na Vercel
-app.get("/health", async (req, res) => {
+// Healthcheck (usado em dev local; na Vercel use /api/health.js)
+app.get("/api/health", async (req, res) => {
   if (!sql || !dbConfig) {
     return res.status(500).json({
       ok: false,
@@ -108,7 +34,7 @@ app.get("/health", async (req, res) => {
 });
 
 // HISTÓRICO
-app.get("/historico", async (req, res) => {
+app.get("/api/historico", async (req, res) => {
   try {
     await garantirTabelas();
     const rows = await sql`SELECT * FROM historico ORDER BY id DESC`;
@@ -118,7 +44,7 @@ app.get("/historico", async (req, res) => {
   }
 });
 
-app.post("/historico", async (req, res) => {
+app.post("/api/historico", async (req, res) => {
   try {
     await garantirTabelas();
 
@@ -167,7 +93,7 @@ app.post("/historico", async (req, res) => {
 });
 
 // PREVISÕES
-app.get("/previsoes", async (req, res) => {
+app.get("/api/previsoes", async (req, res) => {
   try {
     await garantirTabelas();
     const rows = await sql`SELECT * FROM previsoesChegada ORDER BY id DESC`;
@@ -177,7 +103,7 @@ app.get("/previsoes", async (req, res) => {
   }
 });
 
-app.post("/previsoes", async (req, res) => {
+app.post("/api/previsoes", async (req, res) => {
   try {
     await garantirTabelas();
 
@@ -220,7 +146,7 @@ app.post("/previsoes", async (req, res) => {
 });
 
 // NILS
-app.get("/nils", async (req, res) => {
+app.get("/api/nils", async (req, res) => {
   try {
     await garantirTabelas();
     const rows = await sql`SELECT * FROM nilsGerados ORDER BY id DESC`;
@@ -230,17 +156,24 @@ app.get("/nils", async (req, res) => {
   }
 });
 
-app.post("/nils", async (req, res) => {
+app.post("/api/nils", async (req, res) => {
   try {
     await garantirTabelas();
 
-    const { numeroNIL, data, hora, usuario, dados } = req.body ?? {};
+    const body = req.body ?? {};
 
-    if (!numeroNIL || !data || !hora || !usuario || !dados) {
-      return res.status(400).json({
-        error: "Campos obrigatórios: numeroNIL, data, hora, usuario, dados",
-      });
-    }
+    const agora = new Date();
+    const numeroNIL =
+      body.numeroNIL ||
+      `NIL-${(body.sj || "PROC").toString()}-${agora.getTime()}`;
+    const data =
+      body.data ||
+      agora.toISOString().slice(0, 10); // YYYY-MM-DD
+    const hora =
+      body.hora ||
+      agora.toTimeString().slice(0, 5); // HH:MM
+    const usuario = body.usuario || "SISTEMA";
+    const dados = JSON.stringify(body);
 
     const result = await sql`
       INSERT INTO nilsGerados (numeroNIL, data, hora, usuario, dados)
