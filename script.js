@@ -57,7 +57,7 @@ function verificarPerfil(paginaAtual) {
     // Páginas permitidas por perfil
     const paginasOperador = ['dashboard-operador.html', 'cadastro.html', 'cadastro-aereo.html', 'etiquetas.html'];
     const paginasImportacao = ['previsao.html', 'historico.html'];
-    const paginasAdmin = ['index.html', 'cadastro.html', 'cadastro-aereo.html', 'historico.html', 'nil.html', 'previsao.html', 'historicoNIL.html'];
+    const paginasAdmin = ['index.html', 'cadastro.html', 'cadastro-aereo.html', 'historico.html', 'nil.html', 'previsao.html', 'historicoNIL.html', 'admin-usuarios.html'];
     
     if (perfil === 'OPERADOR') {
         if (!paginasOperador.includes(paginaAtual)) {
@@ -142,6 +142,10 @@ function renderizarMenuLateral() {
             <a href="historicoNIL.html" class="menu-link ${paginaAtual === 'historicoNIL.html' ? 'active' : ''}">
                 <i class="fas fa-print"></i>
                 <span>Histórico NIL</span>
+            </a>
+            <a href="admin-usuarios.html" class="menu-link ${paginaAtual === 'admin-usuarios.html' ? 'active' : ''}">
+                <i class="fas fa-users-cog"></i>
+                <span>Usuários</span>
             </a>
         `;
     }
