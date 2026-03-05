@@ -159,47 +159,54 @@ function inicializarLogin() {
 }
 
 function realizarLogin() {
-    const usuario = document.getElementById('usuario').value.toUpperCase();
+    const usuario = document.getElementById('usuario').value.trim();
     const senha = document.getElementById('senha').value;
     const mensagemErro = document.getElementById('mensagemErro');
-    
-    // Usuários fixos do sistema
-    const usuarios = {
-        'ADMIN': { senha: '1234', perfil: 'ADMIN' },
-        'OPERADOR': { senha: '1234', perfil: 'OPERADOR' },
-        'IMPORTACAO': { senha: '1234', perfil: 'IMPORTACAO' }
-    };
-    
-    const usuarioData = usuarios[usuario];
-    
-    if (usuarioData && usuarioData.senha === senha) {
-        localStorage.setItem('usuarioLogado', usuario);
-        localStorage.setItem('perfilUsuario', usuarioData.perfil);
-        
-        // Redirecionar conforme perfil
-        if (usuarioData.perfil === 'OPERADOR') {
-            window.location.href = 'dashboard-operador.html';
-        } else if (usuarioData.perfil === 'IMPORTACAO') {
-            window.location.href = 'previsao.html';
-        } else {
-            window.location.href = 'index.html';
-        }
-    } else {
-        mensagemErro.textContent = 'Usuário ou senha inválidos!';
+
+    mensagemErro.textContent = '';
+    mensagemErro.classList.remove('show');
+
+    if (!window.Auth || !window.apiClient) {
+        mensagemErro.textContent = 'Serviço de autenticação indisponível.';
         mensagemErro.classList.add('show');
-        setTimeout(() => {
-            mensagemErro.textContent = '';
-            mensagemErro.classList.remove('show');
-        }, 3000);
+        return;
     }
+
+    window.Auth.login(usuario, senha)
+        .then((user) => {
+            const perfil = user.role || 'OPERADOR';
+
+            if (perfil === 'OPERADOR') {
+                window.location.href = 'dashboard-operador.html';
+            } else if (perfil === 'IMPORTACAO') {
+                window.location.href = 'previsao.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        })
+        .catch((err) => {
+            console.error(err);
+            mensagemErro.textContent = 'Usuário ou senha inválidos!';
+            mensagemErro.classList.add('show');
+            setTimeout(() => {
+                mensagemErro.textContent = '';
+                mensagemErro.classList.remove('show');
+            }, 3000);
+        });
 }
 
 // ================= SAIR =================
 function sair() {
     if (confirm('Deseja realmente sair do sistema?')) {
-        localStorage.removeItem('usuarioLogado');
-        localStorage.removeItem('perfilUsuario');
-        window.location.href = 'login.html';
+        if (window.Auth) {
+            window.Auth.logout().finally(() => {
+                window.location.href = 'login.html';
+            });
+        } else {
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('perfilUsuario');
+            window.location.href = 'login.html';
+        }
     }
 }
 

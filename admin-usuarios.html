@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Usuários - Controle Logístico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>XCMG</h2>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="index.html" class="menu-link">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="cadastro.html" class="menu-link">
+                    <i class="fas fa-ship"></i>
+                    <span>Cadastro Marítimo</span>
+                </a>
+                <a href="cadastro-aereo.html" class="menu-link">
+                    <i class="fas fa-plane"></i>
+                    <span>Cadastro Aéreo</span>
+                </a>
+                <a href="historico.html" class="menu-link">
+                    <i class="fas fa-history"></i>
+                    <span>Histórico</span>
+                </a>
+                <a href="previsao.html" class="menu-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Previsão de Chegada</span>
+                </a>
+                <a href="nil.html" class="menu-link">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Emitir NIL</span>
+                </a>
+                <a href="historicoNIL.html" class="menu-link">
+                    <i class="fas fa-print"></i>
+                    <span>Histórico NIL</span>
+                </a>
+                <a href="admin-usuarios.html" class="menu-link active">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Usuários</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-wrapper">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1>Gestão de Usuários</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="nomeUsuario">Admin</span>
+                    </div>
+                    <button class="btn-logout" onclick="sair()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="form-container" style="margin-bottom: 24px;">
+                    <h3 style="color: #00469B; margin-bottom: 16px;">Novo Usuário</h3>
+                    <form id="formUsuario">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="usernameUsuario">Usuário *</label>
+                                <input type="text" id="usernameUsuario" required style="text-transform: none;">
+                            </div>
+                            <div class="form-group">
+                                <label for="senhaUsuario">Senha *</label>
+                                <input type="password" id="senhaUsuario" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="roleUsuario">Perfil *</label>
+                                <select id="roleUsuario" required>
+                                    <option value="">Selecione</option>
+                                    <option value="ADMIN">Admin</option>
+                                    <option value="OPERADOR">Usuário Tipo 2 (Operador)</option>
+                                    <option value="IMPORTACAO">Usuário Tipo 3 (Importação)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ativoUsuario">Ativo</label>
+                                <select id="ativoUsuario">
+                                    <option value="true" selected>Sim</option>
+                                    <option value="false">Não</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="mensagemErroUsuario" class="error-message"></div>
+                        <div id="mensagemSucessoUsuario" class="success-message"></div>
+                        <div class="form-actions">
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-eraser"></i> Limpar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Usuário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuário</th>
+                                <th>Perfil</th>
+                                <th>Ativo</th>
+                                <th>Criado em</th>
+                                <th>Atualizado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaUsuarios">
+                            <tr>
+                                <td colspan="7" class="no-data">Nenhum usuário cadastrado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/apiClient.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (!validarPermissaoAdmin()) {
+                alert('Apenas ADMIN pode acessar a gestão de usuários.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            await carregarUsuarios();
+
+            const form = document.getElementById('formUsuario');
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                await salvarUsuario();
+            });
+        });
+
+        async function carregarUsuarios() {
+            const tbody = document.getElementById('tabelaUsuarios');
+            tbody.innerHTML = '<tr><td colspan="7" class="no-data">Carregando...</td></tr>';
+
+            try {
+                const token = Auth.obterToken();
+                const usuarios = await apiClient.listUsers(token);
+
+                if (!usuarios.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="no-data">Nenhum usuário cadastrado</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                usuarios.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.id}</td>
+                        <td>${u.username}</td>
+                        <td>${u.role}</td>
+                        <td>${u.is_active ? 'Sim' : 'Não'}</td>
+                        <td>${u.created_at ? new Date(u.created_at).toLocaleString('pt-BR') : '-'}</td>
+                        <td>${u.updated_at ? new Date(u.updated_at).toLocaleString('pt-BR') : '-'}</td>
+                        <td>
+                            <button class="btn btn-sm" style="background:#dc3545;color:#fff;padding:6px 10px;" onclick="excluirUsuario(${u.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="7" class="no-data">Erro ao carregar usuários</td></tr>';
+            }
+        }
+
+        async function salvarUsuario() {
+            const username = document.getElementById('usernameUsuario').value.trim();
+            const senha = document.getElementById('senhaUsuario').value;
+            const role = document.getElementById('roleUsuario').value;
+            const ativo = document.getElementById('ativoUsuario').value === 'true';
+            const msgErro = document.getElementById('mensagemErroUsuario');
+            const msgSucesso = document.getElementById('mensagemSucessoUsuario');
+
+            msgErro.textContent = '';
+            msgErro.classList.remove('show');
+            msgSucesso.textContent = '';
+            msgSucesso.classList.remove('show');
+
+            if (!username || !senha || !role) {
+                msgErro.textContent = 'Preencha todos os campos obrigatórios.';
+                msgErro.classList.add('show');
+                return;
+            }
+
+            try {
+                const token = Auth.obterToken();
+                await apiClient.createUser(token, {
+                    username,
+                    password: senha,
+                    role,
+                    is_active: ativo,
+                });
+
+                msgSucesso.textContent = 'Usuário criado com sucesso!';
+                msgSucesso.classList.add('show');
+
+                document.getElementById('formUsuario').reset();
+                document.getElementById('ativoUsuario').value = 'true';
+
+                await carregarUsuarios();
+
+                setTimeout(() => {
+                    msgSucesso.textContent = '';
+                    msgSucesso.classList.remove('show');
+                }, 2000);
+            } catch (err) {
+                console.error(err);
+                msgErro.textContent = err.message || 'Erro ao salvar usuário.';
+                msgErro.classList.add('show');
+            }
+        }
+
+        async function excluirUsuario(id) {
+            if (!confirm('Deseja realmente excluir este usuário?')) return;
+
+            try {
+                const token = Auth.obterToken();
+                await apiClient.deleteUser(token, id);
+                await carregarUsuarios();
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao excluir usuário.');
+            }
+        }
+    </script>
+</body>
+</html>
+*** End Patch`} />
+
