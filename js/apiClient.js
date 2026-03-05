@@ -29,6 +29,11 @@ const apiClient = {
       body: JSON.stringify(payload),
     });
   },
+  deleteHistorico(id) {
+    return apiRequest(`/historico?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  },
   getPrevisoes() {
     return apiRequest("/previsoes");
   },

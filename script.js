@@ -552,7 +552,7 @@ function exibirHistorico(dados) {
     
     tbody.innerHTML = '';
     
-    dados.forEach((item, index) => {
+    dados.forEach((item) => {
         const tr = document.createElement('tr');
         
         const dataRegistro = new Date(item.dataRegistro);
@@ -569,7 +569,7 @@ function exibirHistorico(dados) {
             <td>${item.transportadora || '-'}</td>
             <td>${dataFormatada}</td>
             <td>${item.modalidade}</td>
-            ${isAdmin ? `<td><button class="btn btn-sm" style="background: #dc3545; color: white; padding: 6px 12px;" onclick="confirmarExclusao(${index})"><i class="fas fa-trash"></i></button></td>` : ''}
+            ${isAdmin && item.id ? `<td><button class="btn btn-sm" style="background: #dc3545; color: white; padding: 6px 12px;" onclick="confirmarExclusao(${item.id})"><i class="fas fa-trash"></i></button></td>` : ''}
         `;
         
         tbody.appendChild(tr);
@@ -914,7 +914,7 @@ function contarPorClassificacao() {
 }
 
 // ================= CONFIRMAR EXCLUSÃO =================
-function confirmarExclusao(index) {
+function confirmarExclusao(id) {
     if (!validarPermissaoAdmin()) {
         alert('Apenas ADMIN pode excluir registros.');
         return;
@@ -923,7 +923,7 @@ function confirmarExclusao(index) {
     const modal = document.getElementById('modalConfirmacao');
     if (modal) {
         modal.style.display = 'flex';
-        modal.dataset.index = index;
+        modal.dataset.id = id;
     }
 }
 
@@ -935,15 +935,21 @@ function excluirRegistro() {
     }
     
     const modal = document.getElementById('modalConfirmacao');
-    const index = parseInt(modal.dataset.index);
+    const id = parseInt(modal.dataset.id, 10);
     
-    try {
-        DB.removerLocal('historico', index);
-        fecharModalConfirmacao();
-        carregarHistorico();
-    } catch (error) {
-        alert('Erro ao excluir registro. Tente novamente.');
+    if (!id) {
+        alert('Registro inválido para exclusão.');
+        return;
     }
+
+    DB.removerHistorico(id)
+        .then(() => {
+            fecharModalConfirmacao();
+            carregarHistorico();
+        })
+        .catch(() => {
+            alert('Erro ao excluir registro no servidor. Tente novamente.');
+        });
 }
 
 // ================= FECHAR MODAL CONFIRMAÇÃO =================

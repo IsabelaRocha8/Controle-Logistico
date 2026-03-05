@@ -79,6 +79,18 @@ const DB = {
     writeLocal(key, arr);
   },
 
+  async removerHistorico(id) {
+    if (!window.apiClient) {
+      throw new Error("API client não disponível");
+    }
+
+    await window.apiClient.deleteHistorico(id);
+
+    const historico = readLocal("historico", []);
+    const atualizado = historico.filter((item) => item.id !== id);
+    writeLocal("historico", atualizado);
+  },
+
   async adicionarHistorico(dados) {
     if (!window.apiClient) {
       throw new Error("API client não disponível");

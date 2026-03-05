@@ -92,6 +92,24 @@ app.post("/api/historico", async (req, res) => {
   }
 });
 
+app.delete("/api/historico/:id", async (req, res) => {
+  try {
+    await garantirTabelas();
+
+    const id = Number(req.params.id);
+    if (!id || Number.isNaN(id)) {
+      return res
+        .status(400)
+        .json({ error: "Parâmetro id obrigatório para DELETE" });
+    }
+
+    await sql`DELETE FROM historico WHERE id = ${id}`;
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PREVISÕES
 app.get("/api/previsoes", async (req, res) => {
   try {
