@@ -6,12 +6,15 @@
   "main": "api/index.js",
   "scripts": {
     "dev": "node local.js",
-    "start": "node local.js"
+    "start": "node local.js",
+    "seed-admin": "node scripts/seedAdmin.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
   }
 }

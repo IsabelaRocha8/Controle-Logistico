@@ -57,6 +57,63 @@ const apiClient = {
   health() {
     return apiRequest("/health");
   },
+  // Auth
+  login(credentials) {
+    return apiRequest("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
+  },
+  me(token) {
+    return apiRequest("/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  logout() {
+    return apiRequest("/auth/logout", {
+      method: "POST",
+    });
+  },
+  // Users (admin)
+  listUsers(token) {
+    return apiRequest("/users", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  createUser(token, payload) {
+    return apiRequest("/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  },
+  updateUser(token, id, payload) {
+    return apiRequest(`/users/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  },
+  deleteUser(token, id) {
+    return apiRequest(`/users/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };
 
 window.apiClient = apiClient;
