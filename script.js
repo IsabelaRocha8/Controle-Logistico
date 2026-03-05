@@ -1,8 +1,4 @@
 // ================= INICIALIZAÇÃO =================
-document.addEventListener('DOMContentLoaded', function() {
-    verificarLogin();
-    inicializarPagina();
-});
 document.addEventListener("DOMContentLoaded", async function () {
   verificarLogin();
 
