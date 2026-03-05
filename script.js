@@ -426,11 +426,12 @@ function pesquisarSJAereo() {
     }
 }
 
-// ================= SALVAR CONTAINER =================
+// ================= SALVAR CONTAINER (HISTÓRICO) =================
 function salvarContainer(tipo) {
     let dados;
     let mensagemErro, mensagemSucesso;
     
+    // Define os elementos de mensagem e captura os dados com base no formulário de origem
     if (tipo === 'maritimo') {
         dados = {
             sj: formatarMaiusculo(document.getElementById('sj').value),
@@ -440,12 +441,13 @@ function salvarContainer(tipo) {
             horaInicio: document.getElementById('horaInicio').value,
             horaFinal: document.getElementById('horaFinal').value,
             responsavel: formatarMaiusculo(document.getElementById('responsavel').value),
-            modalidade: 'Marítimo',
+            modalidade: 'Marítimo', // Identificador para o histórico
             dataRegistro: new Date().toISOString()
         };
         mensagemErro = document.getElementById('mensagemErro');
         mensagemSucesso = document.getElementById('mensagemSucesso');
     } else {
+        // Lógica específica para o Cadastro Aéreo
         dados = {
             sj: formatarMaiusculo(document.getElementById('sjAereo').value),
             container: formatarMaiusculo(document.getElementById('containerAereo').value),
@@ -454,20 +456,20 @@ function salvarContainer(tipo) {
             horaInicio: document.getElementById('horaInicioAereo').value,
             horaFinal: document.getElementById('horaFinalAereo').value,
             responsavel: formatarMaiusculo(document.getElementById('responsavelAereo').value),
-            modalidade: 'Aéreo',
+            modalidade: 'Aéreo', // Identificador para o histórico
             dataRegistro: new Date().toISOString()
         };
         mensagemErro = document.getElementById('mensagemErroAereo');
         mensagemSucesso = document.getElementById('mensagemSucessoAereo');
     }
     
-    // Limpar mensagens
+    // Limpar mensagens anteriores
     mensagemErro.textContent = '';
     mensagemErro.classList.remove('show');
     mensagemSucesso.textContent = '';
     mensagemSucesso.classList.remove('show');
     
-    // Validar campos
+    // Validar campos obrigatórios e formato
     const validacao = validarCampos(dados);
     if (!validacao.valido) {
         mensagemErro.textContent = validacao.mensagem;
@@ -478,51 +480,46 @@ function salvarContainer(tipo) {
     // Calcular tempo de descarregamento
     const tempo = calcularTempo(dados.horaInicio, dados.horaFinal);
     if (!tempo.valido) {
-        mensagemErro.textContent = 'Hora final deve ser maior que hora início!';
+        mensagemErro.textContent = 'A hora final deve ser maior que a hora de início!';
         mensagemErro.classList.add('show');
         return;
     }
     
-    // Adicionar tempo aos dados
+    // Adicionar metadados de tempo aos dados
     dados.tempoMinutos = tempo.minutos;
     dados.tempoFormatado = tempo.formatado;
 
-    // Regra de negócio: mesma SJ não pode ser reutilizada
+    // Regra de negócio: impede duplicidade de SJ
     if (validarSJJaCadastrada(dados.sj)) {
-        mensagemErro.textContent = 'Esta SJ já está cadastrada no sistema.';
+        mensagemErro.textContent = 'Esta SJ já se encontra registada no sistema.';
         mensagemErro.classList.add('show');
         return;
     }
     
-    // Verificar se container já existe na mesma SJ (segurança extra)
-    if (validarContainerNaMesmaSJ(dados.sj, dados.container)) {
-        mensagemErro.textContent = 'Este container já foi registrado nesta SJ.';
-        mensagemErro.classList.add('show');
-        return;
-    }
-    
-    // Salvar via API / banco e sincronizar cache local
+    // Persistência: Envia para a API e atualiza o armazenamento local
     if (window.DB && typeof DB.adicionarHistorico === "function") {
         DB.adicionarHistorico(dados)
             .then(() => {
-                mensagemSucesso.textContent = 'Container cadastrado com sucesso!';
+                // Atualiza o cache local para que o histórico mostre o novo registo imediatamente
+                const historicoLocal = JSON.parse(localStorage.getItem('historico')) || [];
+                localStorage.setItem('historico', JSON.stringify([dados, ...historicoLocal]));
+
+                mensagemSucesso.textContent = 'Contentor registado com sucesso!';
                 mensagemSucesso.classList.add('show');
                 
+                // Limpa o formulário após o sucesso
                 setTimeout(() => {
-                    if (tipo === 'maritimo') {
-                        document.getElementById('formCadastroMaritimo').reset();
-                    } else {
-                        document.getElementById('formCadastroAereo').reset();
-                    }
+                    limparFormulario(tipo === 'maritimo' ? 'formCadastroMaritimo' : 'formCadastroAereo');
                     mensagemSucesso.classList.remove('show');
                 }, 2000);
             })
-            .catch(() => {
-                mensagemErro.textContent = 'Erro ao salvar no servidor. Tente novamente.';
+            .catch((err) => {
+                console.error("Erro ao salvar:", err);
+                mensagemErro.textContent = 'Erro ao guardar no servidor. Tente novamente.';
                 mensagemErro.classList.add('show');
             });
     } else {
-        mensagemErro.textContent = 'Camada de armazenamento indisponível (DB).';
+        mensagemErro.textContent = 'Camada de armazenamento (DB) indisponível.';
         mensagemErro.classList.add('show');
     }
 }
