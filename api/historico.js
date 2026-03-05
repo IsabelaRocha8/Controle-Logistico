@@ -68,7 +68,24 @@ module.exports = async (req, res) => {
     }
   }
 
-  res.setHeader("Allow", "GET, POST");
+  if (req.method === "DELETE") {
+    const id =
+      Number(req.query?.id) ||
+      Number((req.body && req.body.id) || NaN);
+
+    if (!id || Number.isNaN(id)) {
+      return res.status(400).json({ error: "Parâmetro id obrigatório para DELETE" });
+    }
+
+    try {
+      await sql`DELETE FROM historico WHERE id = ${id}`;
+      return res.json({ ok: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  res.setHeader("Allow", "GET, POST, DELETE");
   return res.status(405).json({ error: "Method not allowed" });
 };
 
