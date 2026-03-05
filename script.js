@@ -323,14 +323,20 @@ function validarCampos(dados) {
 
 // ================= VALIDAR CONTAINER DUPLICADO =================
 function validarContainerDuplicado(container) {
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const historico = DB.obter('historico') || [];
     return historico.some(item => item.container === container);
 }
 
 // ================= VALIDAR CONTAINER NA MESMA SJ =================
 function validarContainerNaMesmaSJ(sj, container) {
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const historico = DB.obter('historico') || [];
     return historico.some(item => item.sj === sj && item.container === container);
+}
+
+// ================= VALIDAR SJ JÁ CADASTRADA =================
+function validarSJJaCadastrada(sj) {
+    const historico = DB.obter('historico') || [];
+    return historico.some(item => item.sj === sj);
 }
 
 // ================= CALCULAR TEMPO =================
@@ -473,8 +479,15 @@ function salvarContainer(tipo) {
     // Adicionar tempo aos dados
     dados.tempoMinutos = tempo.minutos;
     dados.tempoFormatado = tempo.formatado;
+
+    // Regra de negócio: mesma SJ não pode ser reutilizada
+    if (validarSJJaCadastrada(dados.sj)) {
+        mensagemErro.textContent = 'Esta SJ já está cadastrada no sistema.';
+        mensagemErro.classList.add('show');
+        return;
+    }
     
-    // Verificar se container já existe na mesma SJ
+    // Verificar se container já existe na mesma SJ (segurança extra)
     if (validarContainerNaMesmaSJ(dados.sj, dados.container)) {
         mensagemErro.textContent = 'Este container já foi registrado nesta SJ.';
         mensagemErro.classList.add('show');
