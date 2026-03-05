@@ -1,8 +1,11 @@
 // =============================================================================
-// CONTROLE LOGÍSTICO - PREVISÃO DE CHEGADA (CORREÇÃO DE DATAREGISTRO)
+// CONTROLE LOGÍSTICO - PREVISÃO DE CHEGADA (VERSÃO FINAL CORRIGIDA)
 // =============================================================================
 
 let containersAdicionados = [];
+let filtroAtivo = false;
+let previsaoSelecionada = null;
+let previsaoParaExcluir = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formPrevisao');
@@ -12,48 +15,104 @@ document.addEventListener('DOMContentLoaded', function() {
             salvarPrevisao();
         });
         
-        adicionarConversaoMaiusculo('sjPrevisao');
-        adicionarConversaoMaiusculo('conteudoPrevisao');
-        adicionarConversaoMaiusculo('containerPrevisao');
-        adicionarConversaoMaiusculo('transportadoraPrevisao');
+        // Conversão automática para maiúsculas
+        const campos = [
+            'sjPrevisao', 'conteudoPrevisao', 'containerPrevisao', 
+            'transportadoraPrevisao', 'filtroSJ', 'filtroContainer', 
+            'responsavelChegada', 'cteChegada'
+        ];
+        
+        campos.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', function(e) {
+                    const start = e.target.selectionStart;
+                    const end = e.target.selectionEnd;
+                    e.target.value = e.target.value.toUpperCase();
+                    e.target.setSelectionRange(start, end);
+                });
+            }
+        });
         
         carregarKPIsPrevisao();
         carregarContainerCards();
+        verificarPermissoesCadastro();
+        configurarCampoModal();
     }
 });
 
-function configurarObrigatoriedade() {
-    const modal = document.getElementById('modalPrevisao').value;
-    const isAereo = (modal === 'Aereo');
-    
-    document.getElementById('conteudoPrevisao').required = !isAereo;
-    document.getElementById('transportadoraPrevisao').required = !isAereo;
-    
-    const inputCont = document.getElementById('containerPrevisao');
-    if (isAereo) {
-        inputCont.removeAttribute('maxlength');
-    } else {
-        inputCont.setAttribute('maxlength', '11');
+// ================= REGRAS DE MODAL (AÉREO / MARÍTIMO) =================
+function configurarCampoModal() {
+    const perfil = localStorage.getItem('perfilUsuario');
+    const campoModal = document.getElementById('campoModalImportacao');
+    const selectModal = document.getElementById('modalPrevisao');
+    const inputContainer = document.getElementById('containerPrevisao');
+    const hintContainer = document.getElementById('hintContainer');
+    const inputConteudo = document.getElementById('conteudoPrevisao');
+    const inputTransp = document.getElementById('transportadoraPrevisao');
+    const labelConteudo = document.querySelector('label[for="conteudoPrevisao"]');
+    const labelTransp = document.querySelector('label[for="transportadoraPrevisao"]');
+
+    if ((perfil === 'ADMIN' || perfil === 'IMPORTACAO') && campoModal) {
+        campoModal.style.display = 'block';
+        
+        if (selectModal) {
+            selectModal.addEventListener('change', function() {
+                const modal = this.value;
+                const isAereo = (modal === 'Aereo');
+                
+                if (isAereo) {
+                    inputContainer.removeAttribute('maxlength');
+                    if (hintContainer) hintContainer.textContent = 'Identificação livre (Aéreo)';
+                    inputConteudo.required = false;
+                    inputTransp.required = false;
+                    if (labelConteudo) labelConteudo.textContent = "CONTEÚDO";
+                    if (labelTransp) labelTransp.textContent = "TRANSPORTADORA";
+                } else {
+                    inputContainer.setAttribute('maxlength', '11');
+                    if (hintContainer) hintContainer.textContent = 'Formato ISO 6346: AAAA9999999';
+                    inputConteudo.required = true;
+                    inputTransp.required = true;
+                    if (labelConteudo) labelConteudo.textContent = "CONTEÚDO *";
+                    if (labelTransp) labelTransp.textContent = "TRANSPORTADORA *";
+                }
+            });
+        }
     }
 }
 
+// ================= GESTÃO DE LISTA =================
 function adicionarContainer() {
     const input = document.getElementById('containerPrevisao');
-    const cont = input.value.toUpperCase().trim();
-    if (!cont) return;
+    const container = input.value.toUpperCase().trim();
+    const modal = document.getElementById('modalPrevisao')?.value;
 
-    if (!containersAdicionados.includes(cont)) {
-        containersAdicionados.push(cont);
-        atualizarListaContainers();
-        input.value = '';
+    if (!container) return;
+
+    if (modal === 'Maritimo' || !modal) {
+        if (container.length !== 11) {
+            alert("Contentor marítimo deve ter 11 caracteres.");
+            return;
+        }
     }
+
+    if (containersAdicionados.includes(container)) {
+        alert("Este container já está na lista.");
+        return;
+    }
+
+    containersAdicionados.push(container);
+    input.value = '';
+    input.focus();
+    atualizarListaContainers();
 }
 
 function atualizarListaContainers() {
     const lista = document.getElementById('listaContainers');
+    if (!lista) return;
     lista.innerHTML = containersAdicionados.map((c, i) => `
-        <span style="background: #E6F0FA; padding: 5px 10px; border-radius: 4px; border: 1px solid #00469B; margin-right: 5px; display: inline-block;">
-            ${c} <i class="fas fa-times" style="color:red; cursor:pointer;" onclick="removerContainer(${i})"></i>
+        <span style="background:#E6F0FA; padding:5px 10px; border-radius:4px; border:1px solid #00469B; display:inline-flex; align-items:center; gap:8px; margin:4px;">
+            ${c} <i class="fas fa-times" style="cursor:pointer; color:red;" onclick="removerContainer(${i})"></i>
         </span>
     `).join('');
 }
@@ -63,6 +122,7 @@ function removerContainer(index) {
     atualizarListaContainers();
 }
 
+// ================= SALVAMENTO (CORREÇÃO DE DATA E HORA) =================
 async function salvarPrevisao() {
     const modal = document.getElementById('modalPrevisao').value;
     const sj = document.getElementById('sjPrevisao').value.toUpperCase();
@@ -80,8 +140,8 @@ async function salvarPrevisao() {
     }
 
     const agora = new Date();
-    // Formata a data para YYYY-MM-DD que é o padrão aceito pelo Postgres
     const dataHoje = agora.toISOString().split('T')[0];
+    const horaAgora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     const payload = containersAdicionados.map(cont => ({
         status: 'PREVISTO',
@@ -92,13 +152,18 @@ async function salvarPrevisao() {
         transportadora: transportadora || (modal === 'Aereo' ? 'N/A' : ''),
         usuario: (localStorage.getItem('usuarioLogado') || 'ADMIN').toUpperCase(),
         modalImportacao: modal,
-        dataRegistro: dataHoje // <--- CAMPO CORRIGIDO
+        dataRegistro: dataHoje,
+        horaRegistro: horaAgora
     }));
 
     try {
         for (const reg of payload) {
             await window.apiClient.createPrevisao(reg);
         }
+
+        const previsoesLocais = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+        localStorage.setItem('previsoesChegada', JSON.stringify([...previsoesLocais, ...payload]));
+
         msgSucesso.textContent = "Salvo com sucesso!";
         msgSucesso.classList.add('show');
         setTimeout(() => location.reload(), 1500);
@@ -106,4 +171,50 @@ async function salvarPrevisao() {
         msgErro.textContent = "Erro: " + err.message;
         msgErro.classList.add('show');
     }
+}
+
+// ================= DASHBOARD =================
+function carregarKPIsPrevisao() {
+    const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const hoje = new Date().toISOString().split('T')[0];
+    const atrasados = dados.filter(i => i.status !== 'CHEGOU' && i.dataPrevisao < hoje).length;
+    const hojeCount = dados.filter(i => i.status !== 'CHEGOU' && i.dataPrevisao === hoje).length;
+
+    if(document.getElementById('kpiAtrasados')) document.getElementById('kpiAtrasados').textContent = atrasados;
+    if(document.getElementById('kpiHoje')) document.getElementById('kpiHoje').textContent = hojeCount;
+}
+
+function carregarContainerCards() {
+    const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const containerUI = document.getElementById('containerCards');
+    if (!containerUI) return;
+
+    if (dados.length === 0) {
+        containerUI.innerHTML = '<div class="no-data-card">Nenhuma previsão encontrada</div>';
+        return;
+    }
+
+    containerUI.innerHTML = dados.map((item, index) => `
+        <div class="container-card">
+            <div class="container-card-header">
+                <span class="badge badge-${item.status.toLowerCase()}">${item.status}</span>
+                <span class="badge modal-tag">${item.modalImportacao || 'Marítimo'}</span>
+            </div>
+            <div class="container-card-body">
+                <p><strong>Container:</strong> ${item.container}</p>
+                <p><strong>SJ:</strong> ${item.sj}</p>
+                <p><strong>Previsão:</strong> ${new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+            </div>
+            ${item.status !== 'CHEGOU' ? `
+            <div class="container-card-footer">
+                <button class="btn-card-action" onclick="abrirModalChegada(${index})">Registrar Chegada</button>
+            </div>` : ''}
+        </div>
+    `).join('');
+}
+
+function verificarPermissoesCadastro() {
+    const perfil = localStorage.getItem('perfilUsuario');
+    const form = document.getElementById('formCadastroContainer');
+    if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
 }
