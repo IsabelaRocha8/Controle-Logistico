@@ -9,7 +9,6 @@
 </head>
 <body>
     <div class="dashboard-layout">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <i class="fas fa-shipping-fast"></i>
@@ -47,9 +46,7 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-wrapper">
-            <!-- Top Header -->
             <header class="header">
                 <div class="header-left">
                     <h1>Previsão de Chegada</h1>
@@ -65,206 +62,78 @@
                 </div>
             </header>
 
-            <!-- Content -->
             <div class="dashboard-content">
-                <!-- KPI Cards -->
                 <div class="kpi-row">
                     <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
                         <div class="kpi-info">
                             <h3 id="kpiAtrasados">0</h3>
                             <p>Atrasados</p>
                         </div>
                     </div>
-                    
                     <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, #00469B 0%, #00336F 100%);">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
                         <div class="kpi-info">
                             <h3 id="kpiHoje">0</h3>
                             <p>Previsto para Hoje</p>
                         </div>
                     </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
-                            <i class="fas fa-calendar-week"></i>
-                        </div>
-                        <div class="kpi-info">
-                            <h3 id="kpiSemana">0</h3>
-                            <p>Previsto para a Semana</p>
-                        </div>
-                    </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="kpi-info">
-                            <h3 id="kpiEmDia">0</h3>
-                            <p>Em Dia</p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Formulário de Cadastro (apenas ADMIN) -->
-                <div id="formCadastroContainer" class="form-container" style="display: none;">
+                <div class="form-container">
                     <h3 style="color: #00469B; margin-bottom: 20px;">Registrar Nova Previsão</h3>
                     <form id="formPrevisao">
                         <div class="form-grid">
-                            <div class="form-group" id="campoModalImportacao" style="display: none;">
+                            <div class="form-group">
                                 <label for="modalPrevisao">MODAL *</label>
-                                <select id="modalPrevisao" required>
+                                <select id="modalPrevisao" required onchange="configurarObrigatoriedade()">
                                     <option value="">Selecione</option>
                                     <option value="Maritimo">Marítimo</option>
                                     <option value="Aereo">Aéreo</option>
                                 </select>
                             </div>
-                            
                             <div class="form-group">
                                 <label for="sjPrevisao">SJ *</label>
                                 <input type="text" id="sjPrevisao" required style="text-transform: uppercase;">
                             </div>
-
                             <div class="form-group">
-                                <label for="conteudoPrevisao">CONTEÚDO *</label>
+                                <label for="conteudoPrevisao" id="labelConteudo">CONTEÚDO *</label>
                                 <input type="text" id="conteudoPrevisao" required style="text-transform: uppercase;">
                             </div>
-
                             <div class="form-group">
-                                <label for="transportadoraPrevisao">TRANSPORTADORA *</label>
+                                <label for="transportadoraPrevisao" id="labelTransportadora">TRANSPORTADORA *</label>
                                 <input type="text" id="transportadoraPrevisao" required style="text-transform: uppercase;">
                             </div>
-
                             <div class="form-group">
                                 <label for="dataPrevisao">DATA PREVISTA *</label>
                                 <input type="date" id="dataPrevisao" required>
                             </div>
+                            <div class="form-group">
+                                <label for="containerPrevisao">CONTAINER *</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="containerPrevisao" maxlength="11" style="text-transform: uppercase; flex: 1;">
+                                    <button type="button" class="btn btn-secondary" onclick="adicionarContainer()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <small id="hintContainer">Formato ISO 6346: AAAA9999999</small>
+                            </div>
                         </div>
-                        
-                        <div class="form-group" style="margin-top: 20px;">
-                            <label for="containerPrevisao">CONTAINER *</label>
-                            <input type="text" id="containerPrevisao" maxlength="11" style="text-transform: uppercase;">
-                            <small class="field-hint" id="hintContainer">Formato ISO 6346: AAAA9999999</small>
-                        </div>
-                        
-                        <div style="margin-top: 12px;">
-                            <button type="button" class="btn btn-secondary" onclick="adicionarContainer()">
-                                <i class="fas fa-plus"></i> Adicionar Container
-                            </button>
-                        </div>
-                        
-                        <div id="listaContainers" style="margin-top: 16px;"></div>
+
+                        <div id="listaContainers" style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
 
                         <div id="mensagemErroPrevisao" class="error-message"></div>
                         <div id="mensagemSucessoPrevisao" class="success-message"></div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" onclick="limparFormularioPrevisao()">
-                                <i class="fas fa-eraser"></i> Limpar
-                            </button>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Salvar Previsão
                             </button>
                         </div>
                     </form>
                 </div>
-                
-                <!-- Filtros Compactos -->
-                <div class="filter-compact">
-                    <div class="filter-compact-grid">
-                        <select id="filtroStatus" class="filter-compact-input">
-                            <option value="">Todos os Status</option>
-                            <option value="PREVISTO">PREVISTO</option>
-                            <option value="CONFIRMADO">CONFIRMADO</option>
-                            <option value="ATRASADO">ATRASADO</option>
-                            <option value="CANCELADO">CANCELADO</option>
-                            <option value="CHEGOU">CHEGOU</option>
-                        </select>
-                        
-                        <input type="date" id="filtroDataInicio" class="filter-compact-input" placeholder="Data Início">
-                        <input type="date" id="filtroDataFim" class="filter-compact-input" placeholder="Data Fim">
-                        <input type="text" id="filtroSJ" class="filter-compact-input" placeholder="Buscar SJ" style="text-transform: uppercase;">
-                        <input type="text" id="filtroContainer" class="filter-compact-input" placeholder="Buscar Container" style="text-transform: uppercase;">
-                        
-                        <button class="btn-compact btn-compact-primary" onclick="aplicarFiltrosPrevisao()">
-                            <i class="fas fa-filter"></i> Filtrar
-                        </button>
-                        <button class="btn-compact btn-compact-secondary" onclick="limparFiltrosPrevisao()">
-                            <i class="fas fa-eraser"></i> Limpar
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Cards de Containers -->
-                <div id="containerCards" class="container-cards-grid">
-                    <!-- Cards serão inseridos aqui via JavaScript -->
-                </div>
+
+                <div id="containerCards" class="container-cards-grid"></div>
             </div>
         </main>
-    </div>
-    
-    <!-- Modal Registrar Chegada -->
-    <div id="modalRegistrarChegada" class="modal">
-        <div class="modal-content">
-            <h2>Registrar Chegada</h2>
-            <p>Container <strong id="modalContainer"></strong> da SJ <strong id="modalSJ"></strong></p>
-            
-            <div class="form-grid" style="margin-top: 20px;">
-                <div class="form-group">
-                    <label for="responsavelChegada">RESPONSÁVEL *</label>
-                    <input type="text" id="responsavelChegada" required style="text-transform: uppercase;">
-                </div>
-                
-                <div class="form-group">
-                    <label for="cteChegada">CTE *</label>
-                    <input type="text" id="cteChegada" required style="text-transform: uppercase;">
-                </div>
-                
-                <div class="form-group">
-                    <label for="docaChegada">DOCA *</label>
-                    <select id="docaChegada" required>
-                        <option value="">Selecione</option>
-                        <option value="1">Doca 1</option>
-                        <option value="2">Doca 2</option>
-                        <option value="3">Doca 3</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="horaInicioChegada">HORA INÍCIO *</label>
-                    <input type="time" id="horaInicioChegada" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="horaFinalChegada">HORA FINAL *</label>
-                    <input type="time" id="horaFinalChegada" required>
-                </div>
-            </div>
-            
-            <div id="mensagemErroChegada" class="error-message"></div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="fecharModalChegada()">Cancelar</button>
-                <button class="btn btn-primary" onclick="confirmarChegada()">Confirmar Chegada</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Confirmar Exclusão -->
-    <div id="modalConfirmarExclusao" class="modal">
-        <div class="modal-content">
-            <h2>Confirmar Exclusão</h2>
-            <p>Deseja realmente excluir a previsão do container <strong id="modalExcluirContainer"></strong> da SJ <strong id="modalExcluirSJ"></strong>?</p>
-            <p style="color: #dc3545; font-weight: 600; margin-top: 12px;">Esta ação não pode ser desfeita.</p>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="fecharModalExclusao()">Cancelar</button>
-                <button class="btn" style="background: #dc3545; color: white;" onclick="confirmarExclusao()">Excluir</button>
-            </div>
-        </div>
     </div>
 
     <script src="js/apiClient.js"></script>
