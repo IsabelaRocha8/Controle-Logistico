@@ -481,28 +481,30 @@ function salvarContainer(tipo) {
         return;
     }
     
-    // Obter histórico existente
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
-    
-    // Adicionar novo registro
-    historico.push(dados);
-    
-    // Salvar no localStorage
-    localStorage.setItem('historico', JSON.stringify(historico));
-    
-    // Feedback de sucesso
-    mensagemSucesso.textContent = 'Container cadastrado com sucesso!';
-    mensagemSucesso.classList.add('show');
-    
-    // Limpar formulário após 2 segundos
-    setTimeout(() => {
-        if (tipo === 'maritimo') {
-            document.getElementById('formCadastroMaritimo').reset();
-        } else {
-            document.getElementById('formCadastroAereo').reset();
-        }
-        mensagemSucesso.classList.remove('show');
-    }, 2000);
+    // Salvar via API / banco e sincronizar cache local
+    if (window.DB && typeof DB.adicionarHistorico === "function") {
+        DB.adicionarHistorico(dados)
+            .then(() => {
+                mensagemSucesso.textContent = 'Container cadastrado com sucesso!';
+                mensagemSucesso.classList.add('show');
+                
+                setTimeout(() => {
+                    if (tipo === 'maritimo') {
+                        document.getElementById('formCadastroMaritimo').reset();
+                    } else {
+                        document.getElementById('formCadastroAereo').reset();
+                    }
+                    mensagemSucesso.classList.remove('show');
+                }, 2000);
+            })
+            .catch(() => {
+                mensagemErro.textContent = 'Erro ao salvar no servidor. Tente novamente.';
+                mensagemErro.classList.add('show');
+            });
+    } else {
+        mensagemErro.textContent = 'Camada de armazenamento indisponível (DB).';
+        mensagemErro.classList.add('show');
+    }
 }
 
 // ================= LIMPAR FORMULÁRIO =================

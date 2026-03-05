@@ -1,3 +1,11 @@
+node_modules
+.env
+.env.local
+.vercel
+npm-debug.log*
+package-lock.json
+Thumbs.db
+
 node_modules/
 .env
 .env.local

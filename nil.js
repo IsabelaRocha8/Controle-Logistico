@@ -138,9 +138,9 @@ function gerarNIL() {
         return;
     }
     
-    // Salvar registro NIL
     const nilsGerados = JSON.parse(localStorage.getItem('nilsGerados')) || [];
-    
+    const usuarioLogado = localStorage.getItem('usuarioLogado') || 'ADMIN';
+
     const nilData = {
         sj: sj,
         dataGeracao: new Date().toISOString(),
@@ -157,21 +157,26 @@ function gerarNIL() {
         descricaoOcorrencia: formatarMaiusculo(document.getElementById('descricaoOcorrencia').value),
         registroFoto: document.getElementById('registroFoto').value,
         divulgacao: document.getElementById('divulgacao').value,
-        observacoes: formatarMaiusculo(document.getElementById('observacoes').value)
+        observacoes: formatarMaiusculo(document.getElementById('observacoes').value),
+        usuario: usuarioLogado.toUpperCase()
     };
     
     // Verificar se já existe
     const indiceExistente = nilsGerados.findIndex(item => item.sj === sj);
     
     if (indiceExistente !== -1) {
-        // Atualizar existente
         nilsGerados[indiceExistente] = nilData;
     } else {
-        // Adicionar novo
         nilsGerados.push(nilData);
     }
     
     localStorage.setItem('nilsGerados', JSON.stringify(nilsGerados));
+
+    if (window.DB && typeof DB.adicionarNil === "function") {
+        DB.adicionarNil(nilData).catch(() => {
+            console.error("Falha ao registrar NIL no banco (API /nils).");
+        });
+    }
     
     alert('NIL gerado com sucesso!');
 }

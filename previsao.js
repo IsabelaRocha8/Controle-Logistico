@@ -521,7 +521,7 @@ function removerContainer(index) {
 }
 
 // ================= SALVAR PREVISÃO =================
-function salvarPrevisao() {
+async function salvarPrevisao() {
     const sj = formatarMaiusculo(document.getElementById('sjPrevisao').value);
     const conteudo = formatarMaiusculo(document.getElementById('conteudoPrevisao').value);
     const dataPrevisao = document.getElementById('dataPrevisao').value;
@@ -559,38 +559,43 @@ function salvarPrevisao() {
     
     const usuarioLogado = localStorage.getItem('usuarioLogado') || 'ADMIN';
     const agora = new Date();
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    
-    // Criar um registro individual para cada container
-    containersAdicionados.forEach(container => {
-        const previsao = {
-            status: 'PREVISTO',
-            sj: sj,
-            conteudo: conteudo,
-            container: container,
-            dataPrevisao: dataPrevisao,
-            transportadora: transportadora,
-            dataRegistro: agora.toLocaleDateString('pt-BR'),
-            horaRegistro: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            usuario: usuarioLogado.toUpperCase(),
-            timestamp: agora.toISOString(),
-            modalImportacao: perfil === 'IMPORTACAO' ? modalSelecionado : null
-        };
-        previsoes.push(previsao);
-    });
-    
-    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-    
-    mensagemSucesso.textContent = `${containersAdicionados.length} container(s) cadastrado(s) com sucesso!`;
-    mensagemSucesso.classList.add('show');
-    
-    carregarKPIsPrevisao();
-    carregarContainerCards();
-    
-    setTimeout(() => {
-        limparFormularioPrevisao();
-        mensagemSucesso.classList.remove('show');
-    }, 2000);
+    const registros = containersAdicionados.map(container => ({
+        status: 'PREVISTO',
+        sj: sj,
+        conteudo: conteudo,
+        container: container,
+        dataPrevisao: dataPrevisao,
+        transportadora: transportadora,
+        dataRegistro: agora.toLocaleDateString('pt-BR'),
+        horaRegistro: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        usuario: usuarioLogado.toUpperCase(),
+        timestamp: agora.toISOString(),
+        modalImportacao: perfil === 'IMPORTACAO' ? modalSelecionado : null
+    }));
+
+    if (!window.DB || typeof DB.adicionarPrevisao !== "function") {
+        mensagemErro.textContent = 'Camada de armazenamento indisponível (DB).';
+        mensagemErro.classList.add('show');
+        return;
+    }
+
+    try {
+        await Promise.all(registros.map(reg => DB.adicionarPrevisao(reg)));
+
+        mensagemSucesso.textContent = `${registros.length} container(s) cadastrado(s) com sucesso!`;
+        mensagemSucesso.classList.add('show');
+        
+        carregarKPIsPrevisao();
+        carregarContainerCards();
+        
+        setTimeout(() => {
+            limparFormularioPrevisao();
+            mensagemSucesso.classList.remove('show');
+        }, 2000);
+    } catch (e) {
+        mensagemErro.textContent = 'Erro ao salvar previsões no servidor. Tente novamente.';
+        mensagemErro.classList.add('show');
+    }
 }
 
 // ================= LIMPAR FORMULÁRIO =================
