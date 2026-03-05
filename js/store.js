@@ -13,7 +13,43 @@ function writeLocal(key, value) {
 
 async function syncToLocal(fetchFn, storageKey) {
   const rows = await fetchFn();
-  writeLocal(storageKey, Array.isArray(rows) ? rows : []);
+
+  if (!Array.isArray(rows)) {
+    writeLocal(storageKey, []);
+    return;
+  }
+
+  // Normaliza campos vindos do Postgres para o formato esperado pelo frontend
+  let normalizados = rows;
+
+  if (storageKey === "historico") {
+    normalizados = rows.map((row) => ({
+      ...row,
+      horaInicio: row.horaInicio ?? row.horainicio ?? "",
+      horaFinal: row.horaFinal ?? row.horafinal ?? "",
+      dataRegistro: row.dataRegistro ?? row.dataregistro ?? null,
+      tempoMinutos: row.tempoMinutos ?? row.tempominutos ?? null,
+      tempoFormatado: row.tempoFormatado ?? row.tempoformatado ?? null,
+    }));
+  }
+
+  if (storageKey === "previsoesChegada") {
+    normalizados = rows.map((row) => ({
+      ...row,
+      dataPrevisao: row.dataPrevisao ?? row.dataprevisao ?? row.data_previsao ?? row.data_previsao,
+      dataChegada: row.dataChegada ?? row.datachegada ?? row.data_chegada ?? null,
+    }));
+  }
+
+  if (storageKey === "nilsGerados") {
+    normalizados = rows.map((row) => ({
+      ...row,
+      data: row.data ?? row.data_nil ?? row.datanil ?? row.data,
+      hora: row.hora ?? row.horanil ?? row.hora_nil ?? row.hora,
+    }));
+  }
+
+  writeLocal(storageKey, normalizados);
 }
 
 const DB = {
