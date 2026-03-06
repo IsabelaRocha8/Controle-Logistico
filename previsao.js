@@ -355,3 +355,9 @@ function calcularTempoFormatado(horaInicio, horaFinal) {
     const mins = minutos % 60;
     return `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
+
+function verificarPermissoesCadastro() {
+    const perfil = localStorage.getItem('perfilUsuario');
+    const form = document.getElementById('formCadastroContainer');
+    if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
+}
