@@ -93,9 +93,25 @@
             carregarHistoricoNIL();
         });
 
-        function carregarHistoricoNIL() {
-            const historico = JSON.parse(localStorage.getItem('historicoImpressaoNIL')) || [];
+        async function carregarHistoricoNIL() {
             const tbody = document.getElementById('tabelaHistoricoNIL');
+            let historico = JSON.parse(localStorage.getItem('historicoImpressaoNIL')) || [];
+
+            try {
+                if (window.apiClient && typeof window.apiClient.getNilPrintHistory === 'function') {
+                    const remoto = await window.apiClient.getNilPrintHistory();
+                    historico = remoto.map(item => ({
+                        sj: item.referencia_sj,
+                        container: item.referencia_container,
+                        usuario: item.usuario,
+                        data: item.data,
+                        hora: item.hora,
+                        timestamp: item.created_at || `${item.data}T${item.hora}`,
+                    }));
+                }
+            } catch (err) {
+                console.warn('Falha ao carregar histórico remoto de NIL:', err);
+            }
             
             if (historico.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhuma impressão registrada</td></tr>';
@@ -109,11 +125,11 @@
             historicoOrdenado.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${item.sj}</td>
-                    <td>${item.container}</td>
-                    <td>${item.usuario}</td>
-                    <td>${item.data}</td>
-                    <td>${item.hora}</td>
+                    <td>${item.sj || '-'}</td>
+                    <td>${item.container || '-'}</td>
+                    <td>${item.usuario || '-'}</td>
+                    <td>${item.data || '-'}</td>
+                    <td>${item.hora || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });

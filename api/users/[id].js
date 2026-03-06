@@ -1,32 +1,6 @@
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const { sql, garantirTabelas } = require("../../lib/db");
-
-const JWT_SECRET = process.env.AUTH_SECRET || process.env.JWT_SECRET || "dev-secret-change-me";
-
-function getTokenFromReq(req) {
-  const auth = req.headers.authorization || "";
-  const parts = auth.split(" ");
-  if (parts.length === 2 && parts[0] === "Bearer") {
-    return parts[1];
-  }
-  return null;
-}
-
-async function getCurrentUser(req) {
-  const token = getTokenFromReq(req);
-  if (!token) return null;
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const rows =
-      await sql`SELECT id, username, role, is_active FROM users WHERE id = ${decoded.sub} LIMIT 1`;
-    if (!rows.length || rows[0].is_active === false) return null;
-    return rows[0];
-  } catch {
-    return null;
-  }
-}
+const { getCurrentUser } = require("../../lib/auth");
 
 module.exports = async (req, res) => {
   try {
@@ -53,18 +27,12 @@ module.exports = async (req, res) => {
     }
 
     const updates = [];
-    const values = [];
 
-    if (username) {
-      updates.push(sql`username = ${username}`);
-    }
-
-    if (typeof is_active !== "undefined") {
-      updates.push(sql`is_active = ${is_active}`);
-    }
+    if (username) updates.push(sql`username = ${String(username).trim()}`);
+    if (typeof is_active !== "undefined") updates.push(sql`is_active = ${is_active}`);
 
     if (role) {
-      const validRoles = ["ADMIN", "OPERADOR", "IMPORTACAO"];
+      const validRoles = ["ADMIN", "OPERADOR", "IMPORTACAO", "VISUALIZADOR"];
       if (!validRoles.includes(role)) {
         return res.status(400).json({ error: "Role inválida." });
       }
@@ -111,5 +79,3 @@ module.exports = async (req, res) => {
   res.setHeader("Allow", "PUT, DELETE");
   return res.status(405).json({ error: "Method not allowed" });
 };
-
-
