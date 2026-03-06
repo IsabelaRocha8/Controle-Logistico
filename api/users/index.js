@@ -2,8 +2,6 @@ const bcrypt = require("bcryptjs");
 const { sql, garantirTabelas } = require("../../lib/db");
 const { getCurrentUser } = require("../../lib/auth");
 
-const ADMIN_AUTORIZADO = "ISABELA ROCHA";
-
 module.exports = async (req, res) => {
   try {
     await garantirTabelas();
@@ -27,12 +25,6 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === "POST") {
-    if (String(me.username || "").trim().toUpperCase() !== ADMIN_AUTORIZADO) {
-      return res.status(403).json({
-        error: "Acesso restrito a administradores autorizados.",
-      });
-    }
-
     const { username, password, role, is_active } = req.body ?? {};
 
     if (!username || !password || !role) {
