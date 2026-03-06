@@ -47,6 +47,17 @@ const apiClient = {
   getNils() {
     return apiRequest("/nils");
   },
+
+  getNilPrintHistory() {
+    return apiRequest("/nils-print-history");
+  },
+  createNilPrintHistory(payload) {
+    return apiRequest("/nils-print-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  },
   createNil(payload) {
     return apiRequest("/nils", {
       method: "POST",
@@ -112,6 +123,16 @@ const apiClient = {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  },
+  changePassword(token, payload) {
+    return apiRequest("/users/password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     });
   },
 };

@@ -53,24 +53,36 @@ function verificarLogin() {
 // ================= VERIFICAR PERFIL =================
 function verificarPerfil(paginaAtual) {
     const perfil = localStorage.getItem('perfilUsuario');
-    
-    // Páginas permitidas por perfil
+
     const paginasOperador = ['dashboard-operador.html', 'cadastro.html', 'cadastro-aereo.html', 'etiquetas.html'];
     const paginasImportacao = ['previsao.html', 'historico.html'];
     const paginasAdmin = ['index.html', 'cadastro.html', 'cadastro-aereo.html', 'historico.html', 'nil.html', 'previsao.html', 'historicoNIL.html', 'admin-usuarios.html'];
-    
-    if (perfil === 'OPERADOR') {
-        if (!paginasOperador.includes(paginaAtual)) {
-            window.location.href = 'dashboard-operador.html';
-        }
-    } else if (perfil === 'IMPORTACAO') {
-        if (!paginasImportacao.includes(paginaAtual)) {
-            window.location.href = 'previsao.html';
-        }
-    } else if (perfil === 'ADMIN') {
+    const paginasVisualizador = ['nil.html', 'historicoNIL.html', 'historico.html'];
+
+    if (perfil === 'OPERADOR' && !paginasOperador.includes(paginaAtual)) {
+        window.location.href = 'dashboard-operador.html';
+        return;
+    }
+
+    if (perfil === 'IMPORTACAO' && !paginasImportacao.includes(paginaAtual)) {
+        window.location.href = 'previsao.html';
+        return;
+    }
+
+    if (perfil === 'VISUALIZADOR' && !paginasVisualizador.includes(paginaAtual)) {
+        window.location.href = 'nil.html';
+        return;
+    }
+
+    if (perfil === 'ADMIN') {
         if (paginaAtual === 'dashboard-operador.html' || paginaAtual === 'etiquetas.html') {
             window.location.href = 'index.html';
         }
+        return;
+    }
+
+    if (!paginasAdmin.includes(paginaAtual) && perfil !== 'OPERADOR' && perfil !== 'IMPORTACAO' && perfil !== 'VISUALIZADOR') {
+        window.location.href = 'login.html';
     }
 }
 
@@ -78,11 +90,11 @@ function verificarPerfil(paginaAtual) {
 function renderizarMenuLateral() {
     const perfil = localStorage.getItem('perfilUsuario');
     const sidebarMenu = document.querySelector('.sidebar-menu');
-    
+
     if (!sidebarMenu) return;
-    
+
     const paginaAtual = window.location.pathname.split('/').pop();
-    
+
     if (perfil === 'OPERADOR') {
         sidebarMenu.innerHTML = `
             <a href="dashboard-operador.html" class="menu-link ${paginaAtual === 'dashboard-operador.html' ? 'active' : ''}">
@@ -107,6 +119,21 @@ function renderizarMenuLateral() {
             <a href="previsao.html" class="menu-link ${paginaAtual === 'previsao.html' ? 'active' : ''}">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Previsão de Chegada</span>
+            </a>
+            <a href="historico.html" class="menu-link ${paginaAtual === 'historico.html' ? 'active' : ''}">
+                <i class="fas fa-history"></i>
+                <span>Histórico</span>
+            </a>
+        `;
+    } else if (perfil === 'VISUALIZADOR') {
+        sidebarMenu.innerHTML = `
+            <a href="nil.html" class="menu-link ${paginaAtual === 'nil.html' ? 'active' : ''}">
+                <i class="fas fa-file-alt"></i>
+                <span>Emitir NIL</span>
+            </a>
+            <a href="historicoNIL.html" class="menu-link ${paginaAtual === 'historicoNIL.html' ? 'active' : ''}">
+                <i class="fas fa-print"></i>
+                <span>Histórico NIL</span>
             </a>
             <a href="historico.html" class="menu-link ${paginaAtual === 'historico.html' ? 'active' : ''}">
                 <i class="fas fa-history"></i>
@@ -184,6 +211,8 @@ function realizarLogin() {
                 window.location.href = 'dashboard-operador.html';
             } else if (perfil === 'IMPORTACAO') {
                 window.location.href = 'previsao.html';
+            } else if (perfil === 'VISUALIZADOR') {
+                window.location.href = 'nil.html';
             } else {
                 window.location.href = 'index.html';
             }
@@ -426,11 +455,12 @@ function pesquisarSJAereo() {
     }
 }
 
-// ================= SALVAR CONTAINER =================
+// ================= SALVAR CONTAINER (HISTÓRICO) =================
 function salvarContainer(tipo) {
     let dados;
     let mensagemErro, mensagemSucesso;
     
+    // Define os elementos de mensagem e captura os dados com base no formulário de origem
     if (tipo === 'maritimo') {
         dados = {
             sj: formatarMaiusculo(document.getElementById('sj').value),
@@ -440,12 +470,13 @@ function salvarContainer(tipo) {
             horaInicio: document.getElementById('horaInicio').value,
             horaFinal: document.getElementById('horaFinal').value,
             responsavel: formatarMaiusculo(document.getElementById('responsavel').value),
-            modalidade: 'Marítimo',
+            modalidade: 'Marítimo', // Identificador para o histórico
             dataRegistro: new Date().toISOString()
         };
         mensagemErro = document.getElementById('mensagemErro');
         mensagemSucesso = document.getElementById('mensagemSucesso');
     } else {
+        // Lógica específica para o Cadastro Aéreo
         dados = {
             sj: formatarMaiusculo(document.getElementById('sjAereo').value),
             container: formatarMaiusculo(document.getElementById('containerAereo').value),
@@ -454,20 +485,20 @@ function salvarContainer(tipo) {
             horaInicio: document.getElementById('horaInicioAereo').value,
             horaFinal: document.getElementById('horaFinalAereo').value,
             responsavel: formatarMaiusculo(document.getElementById('responsavelAereo').value),
-            modalidade: 'Aéreo',
+            modalidade: 'Aéreo', // Identificador para o histórico
             dataRegistro: new Date().toISOString()
         };
         mensagemErro = document.getElementById('mensagemErroAereo');
         mensagemSucesso = document.getElementById('mensagemSucessoAereo');
     }
     
-    // Limpar mensagens
+    // Limpar mensagens anteriores
     mensagemErro.textContent = '';
     mensagemErro.classList.remove('show');
     mensagemSucesso.textContent = '';
     mensagemSucesso.classList.remove('show');
     
-    // Validar campos
+    // Validar campos obrigatórios e formato
     const validacao = validarCampos(dados);
     if (!validacao.valido) {
         mensagemErro.textContent = validacao.mensagem;
@@ -478,51 +509,46 @@ function salvarContainer(tipo) {
     // Calcular tempo de descarregamento
     const tempo = calcularTempo(dados.horaInicio, dados.horaFinal);
     if (!tempo.valido) {
-        mensagemErro.textContent = 'Hora final deve ser maior que hora início!';
+        mensagemErro.textContent = 'A hora final deve ser maior que a hora de início!';
         mensagemErro.classList.add('show');
         return;
     }
     
-    // Adicionar tempo aos dados
+    // Adicionar metadados de tempo aos dados
     dados.tempoMinutos = tempo.minutos;
     dados.tempoFormatado = tempo.formatado;
 
-    // Regra de negócio: mesma SJ não pode ser reutilizada
+    // Regra de negócio: impede duplicidade de SJ
     if (validarSJJaCadastrada(dados.sj)) {
-        mensagemErro.textContent = 'Esta SJ já está cadastrada no sistema.';
+        mensagemErro.textContent = 'Esta SJ já se encontra registada no sistema.';
         mensagemErro.classList.add('show');
         return;
     }
     
-    // Verificar se container já existe na mesma SJ (segurança extra)
-    if (validarContainerNaMesmaSJ(dados.sj, dados.container)) {
-        mensagemErro.textContent = 'Este container já foi registrado nesta SJ.';
-        mensagemErro.classList.add('show');
-        return;
-    }
-    
-    // Salvar via API / banco e sincronizar cache local
+    // Persistência: Envia para a API e atualiza o armazenamento local
     if (window.DB && typeof DB.adicionarHistorico === "function") {
         DB.adicionarHistorico(dados)
             .then(() => {
-                mensagemSucesso.textContent = 'Container cadastrado com sucesso!';
+                // Atualiza o cache local para que o histórico mostre o novo registo imediatamente
+                const historicoLocal = JSON.parse(localStorage.getItem('historico')) || [];
+                localStorage.setItem('historico', JSON.stringify([dados, ...historicoLocal]));
+
+                mensagemSucesso.textContent = 'Contentor registado com sucesso!';
                 mensagemSucesso.classList.add('show');
                 
+                // Limpa o formulário após o sucesso
                 setTimeout(() => {
-                    if (tipo === 'maritimo') {
-                        document.getElementById('formCadastroMaritimo').reset();
-                    } else {
-                        document.getElementById('formCadastroAereo').reset();
-                    }
+                    limparFormulario(tipo === 'maritimo' ? 'formCadastroMaritimo' : 'formCadastroAereo');
                     mensagemSucesso.classList.remove('show');
                 }, 2000);
             })
-            .catch(() => {
-                mensagemErro.textContent = 'Erro ao salvar no servidor. Tente novamente.';
+            .catch((err) => {
+                console.error("Erro ao salvar:", err);
+                mensagemErro.textContent = 'Erro ao guardar no servidor. Tente novamente.';
                 mensagemErro.classList.add('show');
             });
     } else {
-        mensagemErro.textContent = 'Camada de armazenamento indisponível (DB).';
+        mensagemErro.textContent = 'Camada de armazenamento (DB) indisponível.';
         mensagemErro.classList.add('show');
     }
 }
@@ -1290,4 +1316,47 @@ function criarGraficoTransportadoras(historico) {
             }
         }
     });
+}
+
+
+// ================= RELATÓRIO NIL DO DIA =================
+function gerarRelatorioNILDia() {
+    if (!validarPermissaoAdmin()) {
+        alert('Apenas ADMIN pode gerar o relatório completo do dia.');
+        return;
+    }
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const historico = DB.obter('historico') || [];
+    const previsoes = DB.obter('previsoesChegada') || [];
+
+    const chegadasDia = historico.filter(item => {
+        const data = new Date(item.dataRegistro).toISOString().split('T')[0];
+        return data === hoje;
+    });
+
+    const previsoesDia = previsoes.filter(item => (item.dataRegistro || item.dataChegada || '') === hoje);
+
+    const w = window.open('', '_blank');
+    w.document.write(`
+        <html><head><title>Relatório NIL do Dia</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; color: #222; }
+            h1, h2 { color: #00469B; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+            th { background: #f4f7fb; }
+        </style></head><body>
+        <h1>Relatório Completo do Dia (${new Date().toLocaleDateString('pt-BR')})</h1>
+        <h2>Containers que chegaram no dia</h2>
+        <table><thead><tr><th>SJ</th><th>Container</th><th>CTE</th><th>Doca</th><th>Responsável</th><th>Hora Início</th><th>Hora Final</th></tr></thead><tbody>
+        ${chegadasDia.map(r => `<tr><td>${r.sj}</td><td>${r.container}</td><td>${r.cte}</td><td>${r.doca}</td><td>${r.responsavel || '-'}</td><td>${r.horaInicio || '-'}</td><td>${r.horaFinal || '-'}</td></tr>`).join('') || '<tr><td colspan="7">Sem registros de chegada hoje.</td></tr>'}
+        </tbody></table>
+        <h2>Histórico/Previsões do dia</h2>
+        <table><thead><tr><th>Status</th><th>SJ</th><th>Container</th><th>Modal</th><th>Data</th><th>Hora</th></tr></thead><tbody>
+        ${previsoesDia.map(p => `<tr><td>${p.status}</td><td>${p.sj}</td><td>${p.container}</td><td>${p.modalImportacao || '-'}</td><td>${p.dataRegistro || p.dataChegada || '-'}</td><td>${p.horaRegistro || '-'}</td></tr>`).join('') || '<tr><td colspan="6">Sem previsões/histórico hoje.</td></tr>'}
+        </tbody></table>
+        </body></html>
+    `);
+    w.document.close();
 }
