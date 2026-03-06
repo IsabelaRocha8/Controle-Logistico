@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // ================= REGRAS DE MODAL (AÉREO / MARÍTIMO) =================
 function configurarCampoModal() {
     const perfil = localStorage.getItem('perfilUsuario');
-    const campoModal = document.getElementById('campoModalImportacao');
     const selectModal = document.getElementById('modalPrevisao');
     const inputContainer = document.getElementById('containerPrevisao');
     const hintContainer = document.getElementById('hintContainer');
@@ -53,32 +52,43 @@ function configurarCampoModal() {
     const labelConteudo = document.querySelector('label[for="conteudoPrevisao"]');
     const labelTransp = document.querySelector('label[for="transportadoraPrevisao"]');
 
-    if ((perfil === 'ADMIN' || perfil === 'IMPORTACAO') && campoModal) {
-        campoModal.style.display = 'block';
-        
-        if (selectModal) {
-            selectModal.addEventListener('change', function() {
-                const modal = this.value;
-                const isAereo = (modal === 'Aereo');
-                
-                if (isAereo) {
-                    inputContainer.removeAttribute('maxlength');
-                    if (hintContainer) hintContainer.textContent = 'Identificação livre (Aéreo)';
-                    inputConteudo.required = false;
-                    inputTransp.required = false;
-                    if (labelConteudo) labelConteudo.textContent = "CONTEÚDO";
-                    if (labelTransp) labelTransp.textContent = "TRANSPORTADORA";
-                } else {
-                    inputContainer.setAttribute('maxlength', '11');
-                    if (hintContainer) hintContainer.textContent = 'Formato ISO 6346: AAAA9999999';
-                    inputConteudo.required = true;
-                    inputTransp.required = true;
-                    if (labelConteudo) labelConteudo.textContent = "CONTEÚDO *";
-                    if (labelTransp) labelTransp.textContent = "TRANSPORTADORA *";
-                }
-            });
-        }
+    if (perfil !== 'ADMIN' && perfil !== 'IMPORTACAO') {
+        return;
     }
+
+    const aplicarRegrasModal = (modal) => {
+        const isAereo = (modal === 'Aereo');
+
+        if (isAereo) {
+            inputContainer.removeAttribute('maxlength');
+            if (hintContainer) hintContainer.textContent = 'Identificação livre (Aéreo)';
+            inputConteudo.required = false;
+            inputTransp.required = false;
+            if (labelConteudo) labelConteudo.textContent = 'CONTEÚDO';
+            if (labelTransp) labelTransp.textContent = 'TRANSPORTADORA';
+        } else {
+            inputContainer.setAttribute('maxlength', '11');
+            if (hintContainer) hintContainer.textContent = 'Formato ISO 6346: AAAA9999999';
+            inputConteudo.required = true;
+            inputTransp.required = true;
+            if (labelConteudo) labelConteudo.textContent = 'CONTEÚDO *';
+            if (labelTransp) labelTransp.textContent = 'TRANSPORTADORA *';
+        }
+    };
+
+    if (selectModal) {
+        selectModal.addEventListener('change', function() {
+            aplicarRegrasModal(this.value);
+        });
+
+        aplicarRegrasModal(selectModal.value);
+    }
+}
+
+function configurarObrigatoriedade() {
+    const selectModal = document.getElementById('modalPrevisao');
+    if (!selectModal) return;
+    selectModal.dispatchEvent(new Event('change'));
 }
 
 // ================= GESTÃO DE LISTA =================
@@ -215,6 +225,6 @@ function carregarContainerCards() {
 
 function verificarPermissoesCadastro() {
     const perfil = localStorage.getItem('perfilUsuario');
-    const form = document.getElementById('formCadastroContainer');
+    const form = document.getElementById('formPrevisao');
     if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
 }
