@@ -289,7 +289,7 @@ function fecharModalChegada() {
 }
 
 // ================= CONFIRMAR CHEGADA =================
-function confirmarChegada() {
+async function confirmarChegada() {
     if (previsaoSelecionada === null) return;
     
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
@@ -351,10 +351,20 @@ function confirmarChegada() {
         tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
         tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
     };
-    historico.push(registroHistorico);
-    
+    try {
+        if (window.DB?.adicionarHistorico) {
+            await window.DB.adicionarHistorico(registroHistorico);
+        } else {
+            historico.push(registroHistorico);
+            localStorage.setItem('historico', JSON.stringify(historico));
+        }
+    } catch (err) {
+        console.error('Erro ao salvar histórico na API, mantendo local:', err);
+        historico.push(registroHistorico);
+        localStorage.setItem('historico', JSON.stringify(historico));
+    }
+
     localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-    localStorage.setItem('historico', JSON.stringify(historico));
     
     fecharModalChegada();
     carregarDashboardOperador();

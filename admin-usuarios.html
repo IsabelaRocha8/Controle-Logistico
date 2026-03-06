@@ -80,7 +80,17 @@
                             </div>
                             <div class="form-group">
                                 <label for="senhaUsuario">Senha *</label>
-                                <input type="password" id="senhaUsuario" required>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="password" id="senhaUsuario" required style="flex:1;">
+                                    <button type="button" class="btn btn-secondary" onclick="toggleSenha('senhaUsuario')"><i class="fas fa-eye"></i></button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmarSenhaUsuario">Confirmar Senha *</label>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="password" id="confirmarSenhaUsuario" required style="flex:1;">
+                                    <button type="button" class="btn btn-secondary" onclick="toggleSenha('confirmarSenhaUsuario')"><i class="fas fa-eye"></i></button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="roleUsuario">Perfil *</label>
@@ -89,6 +99,7 @@
                                     <option value="ADMIN">Admin</option>
                                     <option value="OPERADOR">Usuário Tipo 2 (Operador)</option>
                                     <option value="IMPORTACAO">Usuário Tipo 3 (Importação)</option>
+                                    <option value="VISUALIZADOR">Visualizador</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -107,6 +118,32 @@
                             </button>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Salvar Usuário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                
+                <div class="form-container" style="margin-bottom: 24px;">
+                    <h3 style="color: #00469B; margin-bottom: 16px;">Alteração de Senha</h3>
+                    <form id="formAlterarSenha">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="targetUserId">ID do usuário (opcional para ADMIN)</label>
+                                <input type="number" id="targetUserId" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="senhaAtual">Senha Atual</label>
+                                <input type="password" id="senhaAtual">
+                            </div>
+                            <div class="form-group">
+                                <label for="novaSenha">Nova Senha *</label>
+                                <input type="password" id="novaSenha" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key"></i> Alterar Senha
                             </button>
                         </div>
                     </form>
@@ -146,8 +183,13 @@
                 window.location.href = 'index.html';
                 return;
             }
-
             await carregarUsuarios();
+
+            const formSenha = document.getElementById('formAlterarSenha');
+            formSenha.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                await alterarSenha();
+            });
 
             const form = document.getElementById('formUsuario');
             form.addEventListener('submit', async function (e) {
@@ -196,6 +238,7 @@
         async function salvarUsuario() {
             const username = document.getElementById('usernameUsuario').value.trim();
             const senha = document.getElementById('senhaUsuario').value;
+            const confirmarSenha = document.getElementById('confirmarSenhaUsuario').value;
             const role = document.getElementById('roleUsuario').value;
             const ativo = document.getElementById('ativoUsuario').value === 'true';
             const msgErro = document.getElementById('mensagemErroUsuario');
@@ -206,12 +249,11 @@
             msgSucesso.textContent = '';
             msgSucesso.classList.remove('show');
 
-            if (!username || !senha || !role) {
+            if (!username || !senha || !confirmarSenha || !role) {
                 msgErro.textContent = 'Preencha todos os campos obrigatórios.';
                 msgErro.classList.add('show');
                 return;
             }
-
             try {
                 const token = Auth.obterToken();
                 await apiClient.createUser(token, {
@@ -252,6 +294,29 @@
                 alert('Erro ao excluir usuário.');
             }
         }
+
+        function toggleSenha(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.type = el.type === 'password' ? 'text' : 'password';
+        }
+
+        async function alterarSenha() {
+            try {
+                const token = Auth.obterToken();
+                const payload = {
+                    targetUserId: document.getElementById('targetUserId').value || undefined,
+                    currentPassword: document.getElementById('senhaAtual').value || undefined,
+                    newPassword: document.getElementById('novaSenha').value,
+                };
+                await apiClient.changePassword(token, payload);
+                alert('Senha alterada com sucesso.');
+                document.getElementById('formAlterarSenha').reset();
+            } catch (err) {
+                alert(err.message || 'Erro ao alterar senha.');
+            }
+        }
+
     </script>
 </body>
 </html>

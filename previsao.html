@@ -139,6 +139,54 @@
     <script src="js/apiClient.js"></script>
     <script src="js/store.js"></script>
     <script src="script.js"></script>
+
+    <!-- Modal Registrar Chegada -->
+    <div id="modalRegistrarChegada" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Chegada</h2>
+            <p>Container <strong id="modalContainer"></strong> da SJ <strong id="modalSJ"></strong></p>
+            
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label for="responsavelChegada">RESPONSÁVEL *</label>
+                    <input type="text" id="responsavelChegada" required style="text-transform: uppercase;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cteChegada">CTE *</label>
+                    <input type="text" id="cteChegada" required style="text-transform: uppercase;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="docaChegada">DOCA *</label>
+                    <select id="docaChegada" required>
+                        <option value="">Selecione</option>
+                        <option value="1">Doca 1</option>
+                        <option value="2">Doca 2</option>
+                        <option value="3">Doca 3</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="horaInicioChegada">HORA INÍCIO *</label>
+                    <input type="time" id="horaInicioChegada" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="horaFinalChegada">HORA FINAL *</label>
+                    <input type="time" id="horaFinalChegada" required>
+                </div>
+            </div>
+            
+            <div id="mensagemErroChegada" class="error-message"></div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="fecharModalChegada()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarChegada()">Confirmar Chegada</button>
+            </div>
+        </div>
+    </div>
+
     <script src="previsao.js"></script>
 </body>
 </html>
