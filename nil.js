@@ -64,15 +64,16 @@ function preencherFormulario(registro) {
 // ================= CONTROLAR BOTÃO IMPRIMIR =================
 function controlarBotaoImprimir() {
     const btnImprimir = document.querySelector('.btn-primary[onclick="imprimirNIL()"]');
-    const isAdmin = validarPermissaoAdmin();
+    const perfil = localStorage.getItem('perfilUsuario');
+    const podeImprimir = ['ADMIN', 'VISUALIZADOR', 'IMPORTACAO'].includes(perfil);
     
     if (!btnImprimir) return;
     
-    if (!isAdmin) {
+    if (!podeImprimir) {
         btnImprimir.disabled = true;
         btnImprimir.style.opacity = '0.5';
         btnImprimir.style.cursor = 'not-allowed';
-        btnImprimir.title = 'Apenas ADMIN pode imprimir NIL.';
+        btnImprimir.title = 'Perfil sem permissão para imprimir NIL.';
         
         let avisoDiv = document.getElementById('avisoPermissao');
         if (!avisoDiv) {
@@ -80,7 +81,7 @@ function controlarBotaoImprimir() {
             avisoDiv.id = 'avisoPermissao';
             avisoDiv.className = 'search-message info';
             avisoDiv.style.marginTop = '20px';
-            avisoDiv.textContent = 'Apenas ADMIN pode imprimir NIL.';
+            avisoDiv.textContent = 'Seu perfil não possui permissão para imprimir NIL.';
             btnImprimir.parentElement.insertBefore(avisoDiv, btnImprimir.parentElement.firstChild);
         }
     } else {
@@ -191,8 +192,9 @@ function imprimirNIL() {
         return;
     }
     
-    if (!validarPermissaoAdmin()) {
-        alert('Apenas ADMIN pode imprimir NIL.');
+    const perfil = localStorage.getItem('perfilUsuario');
+    if (!['ADMIN', 'VISUALIZADOR', 'IMPORTACAO'].includes(perfil)) {
+        alert('Seu perfil não possui permissão para imprimir NIL.');
         return;
     }
     
@@ -211,7 +213,7 @@ function imprimirNIL() {
     const textoRodape = document.getElementById('textoRodapeImpressaoNIL');
     
     if (rodape && textoRodape) {
-        textoRodape.textContent = `Impresso por: ${usuarioLogado.toUpperCase()} em ${dataFormatada} às ${horaFormatada}`;
+        textoRodape.innerHTML = `Impresso por: ${usuarioLogado.toUpperCase()}<br>Data: ${dataFormatada}<br>Hora: ${horaFormatada}`;
         rodape.style.display = 'block';
     }
     
@@ -243,6 +245,17 @@ function registrarImpressaoNIL(dados) {
     const historicoImpressao = JSON.parse(localStorage.getItem('historicoImpressaoNIL')) || [];
     historicoImpressao.push(impressao);
     localStorage.setItem('historicoImpressaoNIL', JSON.stringify(historicoImpressao));
+
+    if (window.apiClient && typeof window.apiClient.createNilPrintHistory === 'function') {
+        window.apiClient.createNilPrintHistory({
+            numeroNIL: `NIL-${dados.sj}`,
+            sj: dados.sj,
+            container: dados.container,
+            usuario: impressao.usuario,
+            data: impressao.data,
+            hora: impressao.hora,
+        }).catch(() => {});
+    }
 }
 
 // ================= RENDERIZAR HISTÓRICO IMPRESSÃO =================

@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // ================= REGRAS DE MODAL (AÉREO / MARÍTIMO) =================
 function configurarCampoModal() {
     const perfil = localStorage.getItem('perfilUsuario');
-    const campoModal = document.getElementById('campoModalImportacao');
     const selectModal = document.getElementById('modalPrevisao');
     const inputContainer = document.getElementById('containerPrevisao');
     const hintContainer = document.getElementById('hintContainer');
@@ -53,32 +52,43 @@ function configurarCampoModal() {
     const labelConteudo = document.querySelector('label[for="conteudoPrevisao"]');
     const labelTransp = document.querySelector('label[for="transportadoraPrevisao"]');
 
-    if ((perfil === 'ADMIN' || perfil === 'IMPORTACAO') && campoModal) {
-        campoModal.style.display = 'block';
-        
-        if (selectModal) {
-            selectModal.addEventListener('change', function() {
-                const modal = this.value;
-                const isAereo = (modal === 'Aereo');
-                
-                if (isAereo) {
-                    inputContainer.removeAttribute('maxlength');
-                    if (hintContainer) hintContainer.textContent = 'Identificação livre (Aéreo)';
-                    inputConteudo.required = false;
-                    inputTransp.required = false;
-                    if (labelConteudo) labelConteudo.textContent = "CONTEÚDO";
-                    if (labelTransp) labelTransp.textContent = "TRANSPORTADORA";
-                } else {
-                    inputContainer.setAttribute('maxlength', '11');
-                    if (hintContainer) hintContainer.textContent = 'Formato ISO 6346: AAAA9999999';
-                    inputConteudo.required = true;
-                    inputTransp.required = true;
-                    if (labelConteudo) labelConteudo.textContent = "CONTEÚDO *";
-                    if (labelTransp) labelTransp.textContent = "TRANSPORTADORA *";
-                }
-            });
-        }
+    if (perfil !== 'ADMIN' && perfil !== 'IMPORTACAO') {
+        return;
     }
+
+    const aplicarRegrasModal = (modal) => {
+        const isAereo = (modal === 'Aereo');
+
+        if (isAereo) {
+            inputContainer.removeAttribute('maxlength');
+            if (hintContainer) hintContainer.textContent = 'Identificação livre (Aéreo)';
+            inputConteudo.required = false;
+            inputTransp.required = false;
+            if (labelConteudo) labelConteudo.textContent = 'CONTEÚDO';
+            if (labelTransp) labelTransp.textContent = 'TRANSPORTADORA';
+        } else {
+            inputContainer.setAttribute('maxlength', '11');
+            if (hintContainer) hintContainer.textContent = 'Formato ISO 6346: AAAA9999999';
+            inputConteudo.required = true;
+            inputTransp.required = true;
+            if (labelConteudo) labelConteudo.textContent = 'CONTEÚDO *';
+            if (labelTransp) labelTransp.textContent = 'TRANSPORTADORA *';
+        }
+    };
+
+    if (selectModal) {
+        selectModal.addEventListener('change', function() {
+            aplicarRegrasModal(this.value);
+        });
+
+        aplicarRegrasModal(selectModal.value);
+    }
+}
+
+function configurarObrigatoriedade() {
+    const selectModal = document.getElementById('modalPrevisao');
+    if (!selectModal) return;
+    selectModal.dispatchEvent(new Event('change'));
 }
 
 // ================= GESTÃO DE LISTA =================
@@ -211,6 +221,139 @@ function carregarContainerCards() {
             </div>` : ''}
         </div>
     `).join('');
+}
+
+function verificarPermissoesCadastro() {
+    const perfil = localStorage.getItem('perfilUsuario');
+    const form = document.getElementById('formPrevisao');
+    if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
+}
+
+// ================= REGISTRAR CHEGADA =================
+function abrirModalChegada(index) {
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+
+    previsaoSelecionada = previsoes.indexOf(pendentes[index]);
+    const previsao = pendentes[index];
+    if (!previsao) return;
+
+    document.getElementById('modalContainer').textContent = previsao.container;
+    document.getElementById('modalSJ').textContent = previsao.sj;
+
+    document.getElementById('responsavelChegada').value = '';
+    document.getElementById('cteChegada').value = '';
+    document.getElementById('docaChegada').value = '';
+    document.getElementById('horaInicioChegada').value = '';
+    document.getElementById('horaFinalChegada').value = '';
+
+    const mensagemErro = document.getElementById('mensagemErroChegada');
+    if (mensagemErro) {
+        mensagemErro.textContent = '';
+        mensagemErro.classList.remove('show');
+    }
+
+    document.getElementById('modalRegistrarChegada').style.display = 'flex';
+}
+
+function fecharModalChegada() {
+    document.getElementById('modalRegistrarChegada').style.display = 'none';
+    previsaoSelecionada = null;
+}
+
+async function confirmarChegada() {
+    if (previsaoSelecionada === null) return;
+
+    const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
+    const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
+    const doca = document.getElementById('docaChegada').value;
+    const horaInicio = document.getElementById('horaInicioChegada').value;
+    const horaFinal = document.getElementById('horaFinalChegada').value;
+    const mensagemErro = document.getElementById('mensagemErroChegada');
+
+    if (!responsavel || !cte || !doca || !horaInicio || !horaFinal) {
+        mensagemErro.textContent = 'Todos os campos são obrigatórios!';
+        mensagemErro.classList.add('show');
+        return;
+    }
+
+    const [horaIni, minIni] = horaInicio.split(':').map(Number);
+    const [horaFim, minFim] = horaFinal.split(':').map(Number);
+    const minutosInicio = horaIni * 60 + minIni;
+    const minutosFinal = horaFim * 60 + minFim;
+
+    if (minutosFinal <= minutosInicio) {
+        mensagemErro.textContent = 'Hora Final deve ser maior que Hora Início!';
+        mensagemErro.classList.add('show');
+        return;
+    }
+
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
+
+    previsoes[previsaoSelecionada].status = 'CHEGOU';
+    previsoes[previsaoSelecionada].dataChegada = hoje;
+    previsoes[previsaoSelecionada].horaInicio = horaInicio;
+    previsoes[previsaoSelecionada].horaFinal = horaFinal;
+    previsoes[previsaoSelecionada].responsavel = responsavel;
+    previsoes[previsaoSelecionada].cte = cte;
+    previsoes[previsaoSelecionada].doca = doca;
+    previsoes[previsaoSelecionada].timestampChegada = agora.toISOString();
+
+    const item = previsoes[previsaoSelecionada];
+    const modalidade = (item.modalImportacao === 'Aereo') ? 'Aéreo' : 'Marítimo';
+
+    const registroHistorico = {
+        sj: item.sj,
+        container: item.container,
+        cte,
+        doca,
+        horaInicio,
+        horaFinal,
+        responsavel,
+        transportadora: item.transportadora || '-',
+        modalidade,
+        dataRegistro: agora.toISOString(),
+        tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
+        tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
+    };
+
+    try {
+        if (window.DB?.adicionarHistorico) {
+            await window.DB.adicionarHistorico(registroHistorico);
+        } else {
+            historico.push(registroHistorico);
+            localStorage.setItem('historico', JSON.stringify(historico));
+        }
+    } catch (err) {
+        console.error('Erro ao salvar histórico na API, mantendo local:', err);
+        historico.push(registroHistorico);
+        localStorage.setItem('historico', JSON.stringify(historico));
+    }
+
+    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+
+    fecharModalChegada();
+    carregarKPIsPrevisao();
+    carregarContainerCards();
+}
+
+function calcularTempoMinutos(horaInicio, horaFinal) {
+    if (!horaInicio || !horaFinal) return 0;
+    const [horaIni, minIni] = horaInicio.split(':').map(Number);
+    const [horaFim, minFim] = horaFinal.split(':').map(Number);
+    const minutosInicio = horaIni * 60 + minIni;
+    const minutosFinal = horaFim * 60 + minFim;
+    return Math.max(0, minutosFinal - minutosInicio);
+}
+
+function calcularTempoFormatado(horaInicio, horaFinal) {
+    const minutos = calcularTempoMinutos(horaInicio, horaFinal);
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    return `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
 
 function verificarPermissoesCadastro() {
