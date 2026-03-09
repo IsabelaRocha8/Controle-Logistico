@@ -157,7 +157,7 @@ function imprimirEtiqueta(previsao, quantidade) {
                 <div class="etiqueta-body">
                     <div class="etiqueta-field">
                         <span class="label">SJ:</span>
-                        <span class="value">${previsao.sj}</span>
+                        <span class="value">${previsao.sj}</span>\n                        <span class="barcode">*${previsao.sj}*</span>
                     </div>
                     <div class="etiqueta-field">
                         <span class="label">CONTEÚDO:</span>
@@ -177,28 +177,29 @@ function imprimirEtiqueta(previsao, quantidade) {
         <head>
             <title>Impressão de Etiquetas</title>
             <style>
-                @page { margin: 10mm; }
-                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                @page { size: 100mm 150mm; margin: 2mm; }
+                body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
                 .etiqueta { 
-                    border: 3px solid #00469B; 
-                    padding: 20px; 
-                    margin-bottom: 20px; 
+                    border: 1px solid #000; 
+                    padding: 4mm; 
+                    margin: 0; 
                     page-break-after: always;
-                    width: 100mm;
-                    height: 60mm;
+                    width: 92mm;
+                    height: 142mm;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
                 }
                 .etiqueta:last-child { page-break-after: auto; }
-                .etiqueta-header { text-align: center; border-bottom: 2px solid #00469B; padding-bottom: 10px; }
-                .etiqueta-header h1 { margin: 0; color: #00469B; font-size: 32px; }
+                .etiqueta-header { text-align: center; border-bottom: 1px solid #000; padding-bottom: 6px; }
+                .etiqueta-header h1 { margin: 0; color: #000; font-size: 28px; }
                 .etiqueta-header p { margin: 5px 0 0 0; color: #00336F; font-size: 14px; }
                 .etiqueta-body { flex: 1; padding: 15px 0; }
                 .etiqueta-field { margin: 10px 0; }
-                .etiqueta-field .label { font-weight: bold; color: #00469B; font-size: 14px; }
+                .etiqueta-field .label { font-weight: bold; color: #000; font-size: 14px; }
                 .etiqueta-field .value { font-size: 18px; font-weight: bold; display: block; margin-top: 5px; }
-                .etiqueta-footer { text-align: center; border-top: 2px solid #00469B; padding-top: 10px; font-size: 12px; color: #666; }
+                .etiqueta-footer { text-align: center; border-top: 1px solid #000; padding-top: 6px; font-size: 11px; color: #000; }
+                .barcode { font-family: "Libre Barcode 39", "Courier New", monospace; font-size: 48px; line-height: 1.1; }
             </style>
         </head>
         <body>
