@@ -315,6 +315,30 @@ function fecharModalChegada() {
     previsaoSelecionada = null;
 }
 
+function exibirModalFeedbackChegada(tipo, mensagem) {
+    const modal = document.getElementById('modalFeedbackChegada');
+    const titulo = document.getElementById('feedbackChegadaTitulo');
+    const texto = document.getElementById('feedbackChegadaMensagem');
+    const content = modal?.querySelector('.modal-feedback-content');
+
+    if (!modal || !titulo || !texto || !content) {
+        alert(mensagem);
+        return;
+    }
+
+    const isSucesso = tipo === 'sucesso';
+    titulo.textContent = isSucesso ? 'Chegada registrada com sucesso!' : 'Falha ao registrar chegada';
+    texto.textContent = mensagem;
+    content.classList.toggle('feedback-success', isSucesso);
+    content.classList.toggle('feedback-error', !isSucesso);
+    modal.style.display = 'flex';
+}
+
+function fecharModalFeedbackChegada() {
+    const modal = document.getElementById('modalFeedbackChegada');
+    if (modal) modal.style.display = 'none';
+}
+
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
     if (previsaoSelecionada === null) return;
@@ -382,9 +406,14 @@ async function confirmarChegada() {
 
     } catch (error) {
         console.error("Erro ao registrar chegada:", error);
-        mensagemErro.textContent = 'Erro ao salvar no sistema. Tente novamente.';
+        const mensagemFalha = error?.message || 'Erro ao salvar no sistema. Tente novamente.';
+        mensagemErro.textContent = mensagemFalha;
         mensagemErro.classList.add('show');
+        exibirModalFeedbackChegada('erro', mensagemFalha);
+        return;
     }
+
+    exibirModalFeedbackChegada('sucesso', 'A chegada do container foi registrada no sistema.');
 }
 
 // ================= CALCULAR TEMPO MINUTOS =================
