@@ -44,6 +44,13 @@ const apiClient = {
       body: JSON.stringify(payload),
     });
   },
+  registrarChegada(payload) {
+    return apiRequest("/registrar-chegada", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  },
   getNils() {
     return apiRequest("/nils");
   },
