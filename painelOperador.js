@@ -152,7 +152,7 @@ function fecharModal() {
 }
 
 // ================= SALVAR CHEGADA =================
-function salvarChegada() {
+async function salvarChegada() {
     const sj = document.getElementById('sjChegada').value;
     const container = document.getElementById('containerChegada').value;
     const doca = document.getElementById('docaChegada').value;
@@ -169,7 +169,7 @@ function salvarChegada() {
         return;
     }
     
-    registrarChegada({
+    await registrarChegada({
         sj: sj,
         container: container,
         doca: doca,
@@ -178,29 +178,70 @@ function salvarChegada() {
     });
     
     fecharModal();
-    carregarChegadasHoje();
-    carregarTodasPrevisoes();
 }
 
 // ================= REGISTRAR CHEGADA =================
-function registrarChegada(dados) {
+async function registrarChegada(dados) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const usuarioLogado = localStorage.getItem('usuarioLogado') || 'OPERADOR';
-    const hoje = new Date().toISOString().split('T')[0];
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
     
     const index = previsoes.findIndex(item => 
         item.sj === dados.sj && item.container === dados.container
     );
     
     if (index !== -1) {
-        atualizarStatusPrevisao(index, {
+        const item = previsoes[index];
+        
+        // 1. Criar registro no HISTÓRICO (Fundamental para o Admin ver)
+        const registroHistorico = {
+            sj: item.sj,
+            container: item.container,
+            cte: item.cte || 'N/A', // CTE pode não estar no modal simples, usa o da previsão ou N/A
+            doca: dados.doca,
+            horaInicio: dados.hora,
+            horaFinal: dados.hora, // Painel simplificado assume hora única ou precisa de ajuste posterior
+            responsavel: dados.responsavel,
+            transportadora: item.transportadora || '-',
+            modalidade: (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo',
+            dataRegistro: agora.toISOString(),
+            tempoMinutos: 0,
+            tempoFormatado: '00:00'
+        };
+
+        // 2. Dados para atualizar a PREVISÃO
+        const dadosAtualizacao = {
             status: 'CHEGOU',
             dataChegada: hoje,
             horaChegada: dados.hora,
             doca: dados.doca,
             responsavel: dados.responsavel,
             usuarioRegistro: usuarioLogado.toUpperCase()
-        });
+        };
+
+        try {
+            if (window.DB) {
+                // Envia para o histórico
+                await window.DB.adicionarHistorico(registroHistorico);
+                
+                // Atualiza status da previsão
+                if (item.id) {
+                    await window.DB.atualizarPrevisao(item.id, dadosAtualizacao);
+                } else {
+                    atualizarStatusPrevisao(index, dadosAtualizacao);
+                }
+                
+                // Sincroniza
+                if (window.DB.init) await window.DB.init();
+            }
+            
+            carregarChegadasHoje();
+            carregarTodasPrevisoes();
+        } catch (err) {
+            alert('Erro ao registrar chegada no servidor.');
+            console.error(err);
+        }
     }
 }
 

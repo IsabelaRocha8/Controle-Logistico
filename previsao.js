@@ -186,9 +186,10 @@ async function salvarPrevisao() {
 // ================= DASHBOARD =================
 function carregarKPIsPrevisao() {
     const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const pendentes = obterPrevisoesPendentes(dados);
     const hoje = new Date().toISOString().split('T')[0];
-    const atrasados = dados.filter(i => i.status !== 'CHEGOU' && i.dataPrevisao < hoje).length;
-    const hojeCount = dados.filter(i => i.status !== 'CHEGOU' && i.dataPrevisao === hoje).length;
+    const atrasados = pendentes.filter(i => i.dataPrevisao < hoje).length;
+    const hojeCount = pendentes.filter(i => i.dataPrevisao === hoje).length;
 
     if(document.getElementById('kpiAtrasados')) document.getElementById('kpiAtrasados').textContent = atrasados;
     if(document.getElementById('kpiHoje')) document.getElementById('kpiHoje').textContent = hojeCount;
@@ -196,15 +197,16 @@ function carregarKPIsPrevisao() {
 
 function carregarContainerCards() {
     const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const pendentes = obterPrevisoesPendentes(dados);
     const containerUI = document.getElementById('containerCards');
     if (!containerUI) return;
 
-    if (dados.length === 0) {
+    if (pendentes.length === 0) {
         containerUI.innerHTML = '<div class="no-data-card">Nenhuma previsão encontrada</div>';
         return;
     }
 
-    containerUI.innerHTML = dados.map((item, index) => `
+    containerUI.innerHTML = pendentes.map((item, index) => `
         <div class="container-card">
             <div class="container-card-header">
                 <span class="badge badge-${item.status.toLowerCase()}">${item.status}</span>
@@ -215,12 +217,26 @@ function carregarContainerCards() {
                 <p><strong>SJ:</strong> ${item.sj}</p>
                 <p><strong>Previsão:</strong> ${new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
             </div>
-            ${item.status !== 'CHEGOU' ? `
             <div class="container-card-footer">
                 <button class="btn-card-action" onclick="abrirModalChegada(${index})">Registrar Chegada</button>
-            </div>` : ''}
+            </div>
         </div>
     `).join('');
+}
+
+function obterPrevisoesPendentes(previsoes) {
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const containersNoHistorico = new Set(
+        historico
+            .map(item => (item?.container || '').toString().trim().toUpperCase())
+            .filter(Boolean)
+    );
+
+    return previsoes.filter(item => {
+        const status = (item?.status || '').toString().trim().toUpperCase();
+        const container = (item?.container || '').toString().trim().toUpperCase();
+        return status !== 'CHEGOU' && !containersNoHistorico.has(container);
+    });
 }
 
 function verificarPermissoesCadastro() {
@@ -232,7 +248,7 @@ function verificarPermissoesCadastro() {
 // ================= REGISTRAR CHEGADA =================
 function abrirModalChegada(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPrevisoesPendentes(previsoes);
 
     previsaoSelecionada = previsoes.indexOf(pendentes[index]);
     const previsao = pendentes[index];
@@ -259,6 +275,30 @@ function abrirModalChegada(index) {
 function fecharModalChegada() {
     document.getElementById('modalRegistrarChegada').style.display = 'none';
     previsaoSelecionada = null;
+}
+
+function exibirModalFeedbackChegada(tipo, mensagem) {
+    const modal = document.getElementById('modalFeedbackChegada');
+    const titulo = document.getElementById('feedbackChegadaTitulo');
+    const texto = document.getElementById('feedbackChegadaMensagem');
+    const content = modal?.querySelector('.modal-feedback-content');
+
+    if (!modal || !titulo || !texto || !content) {
+        alert(mensagem);
+        return;
+    }
+
+    const isSucesso = tipo === 'sucesso';
+    titulo.textContent = isSucesso ? 'Chegada registrada com sucesso!' : 'Falha ao registrar chegada';
+    texto.textContent = mensagem;
+    content.classList.toggle('feedback-success', isSucesso);
+    content.classList.toggle('feedback-error', !isSucesso);
+    modal.style.display = 'flex';
+}
+
+function fecharModalFeedbackChegada() {
+    const modal = document.getElementById('modalFeedbackChegada');
+    if (modal) modal.style.display = 'none';
 }
 
 async function confirmarChegada() {
@@ -289,23 +329,13 @@ async function confirmarChegada() {
     }
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
-    const agora = new Date();
-    const hoje = agora.toISOString().split('T')[0];
-
-    previsoes[previsaoSelecionada].status = 'CHEGOU';
-    previsoes[previsaoSelecionada].dataChegada = hoje;
-    previsoes[previsaoSelecionada].horaInicio = horaInicio;
-    previsoes[previsaoSelecionada].horaFinal = horaFinal;
-    previsoes[previsaoSelecionada].responsavel = responsavel;
-    previsoes[previsaoSelecionada].cte = cte;
-    previsoes[previsaoSelecionada].doca = doca;
-    previsoes[previsaoSelecionada].timestampChegada = agora.toISOString();
-
     const item = previsoes[previsaoSelecionada];
+    if (!item) return;
+
+    const agora = new Date();
     const modalidade = (item.modalImportacao === 'Aereo') ? 'Aéreo' : 'Marítimo';
 
-    const registroHistorico = {
+    const payloadChegada = {
         sj: item.sj,
         container: item.container,
         cte,
@@ -321,23 +351,28 @@ async function confirmarChegada() {
     };
 
     try {
-        if (window.DB?.adicionarHistorico) {
-            await window.DB.adicionarHistorico(registroHistorico);
+        if (window.DB?.registrarChegada) {
+            await window.DB.registrarChegada(payloadChegada);
+        } else if (window.DB?.adicionarHistorico) {
+            await window.DB.adicionarHistorico(payloadChegada);
+            const hoje = agora.toISOString().split('T')[0];
+            previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
+            localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
         } else {
-            historico.push(registroHistorico);
-            localStorage.setItem('historico', JSON.stringify(historico));
+            throw new Error('Integração de API indisponível.');
         }
     } catch (err) {
-        console.error('Erro ao salvar histórico na API, mantendo local:', err);
-        historico.push(registroHistorico);
-        localStorage.setItem('historico', JSON.stringify(historico));
+        const mensagemFalha = err?.message || 'Erro ao registrar chegada.';
+        mensagemErro.textContent = mensagemFalha;
+        mensagemErro.classList.add('show');
+        exibirModalFeedbackChegada('erro', mensagemFalha);
+        return;
     }
-
-    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
 
     fecharModalChegada();
     carregarKPIsPrevisao();
     carregarContainerCards();
+    exibirModalFeedbackChegada('sucesso', 'A chegada do container foi registrada no sistema.');
 }
 
 function calcularTempoMinutos(horaInicio, horaFinal) {
@@ -354,10 +389,4 @@ function calcularTempoFormatado(horaInicio, horaFinal) {
     const horas = Math.floor(minutos / 60);
     const mins = minutos % 60;
     return `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-}
-
-function verificarPermissoesCadastro() {
-    const perfil = localStorage.getItem('perfilUsuario');
-    const form = document.getElementById('formCadastroContainer');
-    if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
 }

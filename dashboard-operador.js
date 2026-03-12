@@ -1,5 +1,9 @@
 // ================= INICIALIZAR DASHBOARD OPERADOR =================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    if (window.DB && window.DB.init) {
+        await window.DB.init();
+    }
+
     carregarDashboardOperador();
     adicionarConversaoMaiusculo('responsavelChegada');
     adicionarConversaoMaiusculo('cteChegada');
@@ -7,6 +11,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 let previsaoSelecionada = null;
 let previsaoParaEtiqueta = null;
+
+function obterPendentesComPrevisao(previsoes) {
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const containersNoHistorico = new Set(
+        historico
+            .map(item => (item?.container || '').toString().trim().toUpperCase())
+            .filter(Boolean)
+    );
+
+    return previsoes
+        .filter(item => {
+            const status = (item?.status || '').toString().trim().toUpperCase();
+            const container = (item?.container || '').toString().trim().toUpperCase();
+            return status !== 'CHEGOU' && !containersNoHistorico.has(container);
+        })
+        .sort((a, b) => {
+            const dataA = a?.dataPrevisao ? new Date(a.dataPrevisao).getTime() : Number.MAX_SAFE_INTEGER;
+            const dataB = b?.dataPrevisao ? new Date(b.dataPrevisao).getTime() : Number.MAX_SAFE_INTEGER;
+            return dataA - dataB;
+        });
+}
 
 // ================= CARREGAR DASHBOARD OPERADOR =================
 function carregarDashboardOperador() {
@@ -33,8 +58,8 @@ function carregarDashboardOperador() {
     document.getElementById('totalChegados').textContent = chegados;
     document.getElementById('totalPrevistos').textContent = previstos;
     
-    // Exibir apenas containers pendentes (não chegados)
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    // Exibir containers pendentes com previsão de chegada cadastrada
+    const pendentes = obterPendentesComPrevisao(previsoes);
     exibirContainersPendentes(pendentes);
 }
 
@@ -54,7 +79,9 @@ function exibirContainersPendentes(dados) {
         const badgeClass = classificacao === 'ATRASADO' ? 'badge-atrasado' : 
                           classificacao === 'EM DIA' ? 'badge-em-dia' : 'badge-adiantado';
         
-        const dataPrevisaoFormatada = new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR');
+        const dataPrevisaoFormatada = item.dataPrevisao
+            ? new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')
+            : '-';
         
         const card = document.createElement('div');
         card.className = 'container-card';
@@ -120,7 +147,7 @@ function exibirContainersPendentes(dados) {
 // ================= ABRIR MODAL ETIQUETA =================
 function abrirModalEtiqueta(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPendentesComPrevisao(previsoes);
     
     previsaoParaEtiqueta = previsoes.indexOf(pendentes[index]);
     
@@ -258,7 +285,7 @@ function imprimirEtiqueta(previsao, quantidade) {
 // ================= ABRIR MODAL CHEGADA =================
 function abrirModalChegada(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPendentesComPrevisao(previsoes);
     
     previsaoSelecionada = previsoes.indexOf(pendentes[index]);
     
@@ -288,86 +315,105 @@ function fecharModalChegada() {
     previsaoSelecionada = null;
 }
 
+function exibirModalFeedbackChegada(tipo, mensagem) {
+    const modal = document.getElementById('modalFeedbackChegada');
+    const titulo = document.getElementById('feedbackChegadaTitulo');
+    const texto = document.getElementById('feedbackChegadaMensagem');
+    const content = modal?.querySelector('.modal-feedback-content');
+
+    if (!modal || !titulo || !texto || !content) {
+        alert(mensagem);
+        return;
+    }
+
+    const isSucesso = tipo === 'sucesso';
+    titulo.textContent = isSucesso ? 'Chegada registrada com sucesso!' : 'Falha ao registrar chegada';
+    texto.textContent = mensagem;
+    content.classList.toggle('feedback-success', isSucesso);
+    content.classList.toggle('feedback-error', !isSucesso);
+    modal.style.display = 'flex';
+}
+
+function fecharModalFeedbackChegada() {
+    const modal = document.getElementById('modalFeedbackChegada');
+    if (modal) modal.style.display = 'none';
+}
+
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
     if (previsaoSelecionada === null) return;
-    
+
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
     const doca = document.getElementById('docaChegada').value;
     const horaInicio = document.getElementById('horaInicioChegada').value;
     const horaFinal = document.getElementById('horaFinalChegada').value;
     const mensagemErro = document.getElementById('mensagemErroChegada');
-    
-    // Validar campos obrigatórios
+
     if (!responsavel || !cte || !doca || !horaInicio || !horaFinal) {
         mensagemErro.textContent = 'Todos os campos são obrigatórios!';
         mensagemErro.classList.add('show');
         return;
     }
-    
-    // Validar hora final maior que hora início
+
     const [horaIni, minIni] = horaInicio.split(':').map(Number);
     const [horaFim, minFim] = horaFinal.split(':').map(Number);
     const minutosInicio = horaIni * 60 + minIni;
     const minutosFinal = horaFim * 60 + minFim;
-    
+
     if (minutosFinal <= minutosInicio) {
         mensagemErro.textContent = 'Hora Final deve ser maior que Hora Início!';
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
     const agora = new Date();
-    const hoje = agora.toISOString().split('T')[0];
     
-    // Atualizar previsão com dados de chegada
-    previsoes[previsaoSelecionada].status = 'CHEGOU';
-    previsoes[previsaoSelecionada].dataChegada = hoje;
-    previsoes[previsaoSelecionada].horaInicio = horaInicio;
-    previsoes[previsaoSelecionada].horaFinal = horaFinal;
-    previsoes[previsaoSelecionada].responsavel = responsavel;
-    previsoes[previsaoSelecionada].cte = cte;
-    previsoes[previsaoSelecionada].doca = doca;
-    previsoes[previsaoSelecionada].timestampChegada = agora.toISOString();
-    
-    // Adicionar ao histórico imediatamente
+    // Obter o item selecionado
     const item = previsoes[previsaoSelecionada];
+    if (!item) return;
+
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
-    
-    const registroHistorico = {
-        sj: item.sj,
-        container: item.container,
-        cte: cte,
-        doca: doca,
-        horaInicio: horaInicio,
-        horaFinal: horaFinal,
-        responsavel: responsavel,
-        transportadora: item.transportadora || '-',
-        modalidade: modalidade,
-        dataRegistro: agora.toISOString(),
-        tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
-        tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
-    };
+
     try {
-        if (window.DB?.adicionarHistorico) {
-            await window.DB.adicionarHistorico(registroHistorico);
-        } else {
-            historico.push(registroHistorico);
-            localStorage.setItem('historico', JSON.stringify(historico));
+        if (!(window.DB && window.DB.registrarChegada)) {
+            throw new Error('Serviço de registro de chegada indisponível.');
         }
-    } catch (err) {
-        console.error('Erro ao salvar histórico na API, mantendo local:', err);
-        historico.push(registroHistorico);
-        localStorage.setItem('historico', JSON.stringify(historico));
+
+        await window.DB.registrarChegada({
+            sj: (item.sj || '').toString().trim().toUpperCase(),
+            container: (item.container || '').toString().trim().toUpperCase(),
+            cte,
+            doca,
+            horaInicio,
+            horaFinal,
+            responsavel,
+            transportadora: item.transportadora || '-',
+            modalidade,
+            dataRegistro: agora.toISOString(),
+            tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
+            tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
+        });
+
+        fecharModalChegada();
+
+        // Recarregar dados para garantir sincronia com banco/histórico
+        if (window.DB && window.DB.init) {
+            await window.DB.init();
+        }
+        carregarDashboardOperador();
+
+    } catch (error) {
+        console.error("Erro ao registrar chegada:", error);
+        const mensagemFalha = error?.message || 'Erro ao salvar no sistema. Tente novamente.';
+        mensagemErro.textContent = mensagemFalha;
+        mensagemErro.classList.add('show');
+        exibirModalFeedbackChegada('erro', mensagemFalha);
+        return;
     }
 
-    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-    
-    fecharModalChegada();
-    carregarDashboardOperador();
+    exibirModalFeedbackChegada('sucesso', 'A chegada do container foi registrada no sistema.');
 }
 
 // ================= CALCULAR TEMPO MINUTOS =================
