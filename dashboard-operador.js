@@ -1,5 +1,9 @@
 // ================= INICIALIZAR DASHBOARD OPERADOR =================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    if (window.DB && window.DB.init) {
+        await window.DB.init();
+    }
+
     carregarDashboardOperador();
     adicionarConversaoMaiusculo('responsavelChegada');
     adicionarConversaoMaiusculo('cteChegada');
@@ -7,6 +11,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 let previsaoSelecionada = null;
 let previsaoParaEtiqueta = null;
+
+function obterPendentesComPrevisao(previsoes) {
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const containersNoHistorico = new Set(
+        historico
+            .map(item => (item?.container || '').toString().trim().toUpperCase())
+            .filter(Boolean)
+    );
+
+    return previsoes
+        .filter(item => {
+            const status = (item?.status || '').toString().trim().toUpperCase();
+            const container = (item?.container || '').toString().trim().toUpperCase();
+            return status !== 'CHEGOU' && !containersNoHistorico.has(container);
+        })
+        .sort((a, b) => {
+            const dataA = a?.dataPrevisao ? new Date(a.dataPrevisao).getTime() : Number.MAX_SAFE_INTEGER;
+            const dataB = b?.dataPrevisao ? new Date(b.dataPrevisao).getTime() : Number.MAX_SAFE_INTEGER;
+            return dataA - dataB;
+        });
+}
 
 // ================= CARREGAR DASHBOARD OPERADOR =================
 function carregarDashboardOperador() {
@@ -33,8 +58,8 @@ function carregarDashboardOperador() {
     document.getElementById('totalChegados').textContent = chegados;
     document.getElementById('totalPrevistos').textContent = previstos;
     
-    // Exibir apenas containers pendentes (não chegados)
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    // Exibir containers pendentes com previsão de chegada cadastrada
+    const pendentes = obterPendentesComPrevisao(previsoes);
     exibirContainersPendentes(pendentes);
 }
 
@@ -54,7 +79,9 @@ function exibirContainersPendentes(dados) {
         const badgeClass = classificacao === 'ATRASADO' ? 'badge-atrasado' : 
                           classificacao === 'EM DIA' ? 'badge-em-dia' : 'badge-adiantado';
         
-        const dataPrevisaoFormatada = new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR');
+        const dataPrevisaoFormatada = item.dataPrevisao
+            ? new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')
+            : '-';
         
         const card = document.createElement('div');
         card.className = 'container-card';
@@ -120,7 +147,7 @@ function exibirContainersPendentes(dados) {
 // ================= ABRIR MODAL ETIQUETA =================
 function abrirModalEtiqueta(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPendentesComPrevisao(previsoes);
     
     previsaoParaEtiqueta = previsoes.indexOf(pendentes[index]);
     
@@ -258,7 +285,7 @@ function imprimirEtiqueta(previsao, quantidade) {
 // ================= ABRIR MODAL CHEGADA =================
 function abrirModalChegada(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPendentesComPrevisao(previsoes);
     
     previsaoSelecionada = previsoes.indexOf(pendentes[index]);
     
@@ -317,64 +344,37 @@ async function confirmarChegada() {
     }
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
     const agora = new Date();
-    const hoje = agora.toISOString().split('T')[0];
     
     // Obter o item selecionado
     const item = previsoes[previsaoSelecionada];
     if (!item) return;
 
-    const agora = new Date();
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
-    
-    // 1. Preparar dados para o HISTÓRICO (Para o Admin ver)
-    const registroHistorico = {
-        sj: item.sj,
-        container: item.container,
-        cte,
-        doca,
-        horaInicio,
-        horaFinal,
-        responsavel,
-        transportadora: item.transportadora || '-',
-        modalidade,
-        dataRegistro: agora.toISOString(),
-        tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
-        tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
-    };
-    
-    // 2. Preparar dados para atualizar a PREVISÃO (Para mudar status e sair da lista)
-    const atualizacaoPrevisao = {
-        status: 'CHEGOU',
-        dataChegada: hoje,
-        horaInicio: horaInicio,
-        horaFinal: horaFinal,
-        responsavel: responsavel,
-        cte: cte,
-        doca: doca,
-        timestampChegada: agora.toISOString()
-    };
 
     try {
-        // Executar operações no Servidor (DB)
-        if (window.DB) {
-            // Salva no histórico global
-            await window.DB.adicionarHistorico(registroHistorico);
-            
-            // Atualiza o status da previsão se tiver ID (vindo do banco)
-            if (item.id) {
-                await window.DB.atualizarPrevisao(item.id, atualizacaoPrevisao);
-            } else {
-                // Fallback para local se não tiver ID (legado)
-                previsoes[previsaoSelecionada] = { ...item, ...atualizacaoPrevisao };
-                localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-            }
+        if (!(window.DB && window.DB.registrarChegada)) {
+            throw new Error('Serviço de registro de chegada indisponível.');
         }
 
+        await window.DB.registrarChegada({
+            sj: (item.sj || '').toString().trim().toUpperCase(),
+            container: (item.container || '').toString().trim().toUpperCase(),
+            cte,
+            doca,
+            horaInicio,
+            horaFinal,
+            responsavel,
+            transportadora: item.transportadora || '-',
+            modalidade,
+            dataRegistro: agora.toISOString(),
+            tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
+            tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
+        });
+
         fecharModalChegada();
-        
-        // Recarregar dados para garantir sincronia
+
+        // Recarregar dados para garantir sincronia com banco/histórico
         if (window.DB && window.DB.init) {
             await window.DB.init();
         }
