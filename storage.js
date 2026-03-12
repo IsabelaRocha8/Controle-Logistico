@@ -83,6 +83,27 @@ const DB = {
     return r;
   },
 
+  async atualizarPrevisao(id, dados) {
+    // Se não tiver ID, não consegue atualizar no servidor corretamente
+    if (!id) return;
+
+    const r = await requestJson(`/previsoes/${id}`, {
+      method: "PUT", // ou PATCH, dependendo da sua API
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dados),
+    });
+
+    // Atualiza localmente
+    const previsoes = readLocal("previsoesChegada", []);
+    const index = previsoes.findIndex((p) => p.id === id);
+    if (index !== -1) {
+      previsoes[index] = { ...previsoes[index], ...dados };
+      writeLocal("previsoesChegada", previsoes);
+    }
+
+    return r;
+  },
+
   async adicionarNil(dados) {
     const r = await requestJson("/nils", {
       method: "POST",

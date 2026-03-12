@@ -347,3 +347,123 @@ function calcularTempoFormatado(horaInicio, horaFinal) {
     const mins = minutos % 60;
     return `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
+
+function verificarPermissoesCadastro() {
+    const perfil = localStorage.getItem('perfilUsuario');
+    const form = document.getElementById('formCadastroContainer');
+    if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
+}
+
+// ================= FUNÇÕES DE CHEGADA (ADMIN) =================
+function abrirModalChegada(index) {
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    previsaoSelecionada = index;
+    const item = previsoes[index];
+    
+    if (!item) return;
+
+    const modal = document.getElementById('modalRegistrarChegada');
+    if (modal) {
+        if(document.getElementById('modalContainer')) document.getElementById('modalContainer').textContent = item.container;
+        if(document.getElementById('modalSJ')) document.getElementById('modalSJ').textContent = item.sj;
+        
+        // Limpar campos
+        const campos = ['responsavelChegada', 'cteChegada', 'docaChegada', 'horaInicioChegada', 'horaFinalChegada'];
+        campos.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = '';
+        });
+        
+        modal.style.display = 'flex';
+    } else {
+        console.error('Modal modalRegistrarChegada não encontrado.');
+    }
+}
+
+function fecharModalChegada() {
+    const modal = document.getElementById('modalRegistrarChegada');
+    if (modal) modal.style.display = 'none';
+    previsaoSelecionada = null;
+}
+
+async function confirmarChegada() {
+    if (previsaoSelecionada === null) return;
+    
+    const responsavel = document.getElementById('responsavelChegada').value.toUpperCase();
+    const cte = document.getElementById('cteChegada').value.toUpperCase();
+    const doca = document.getElementById('docaChegada').value;
+    const horaInicio = document.getElementById('horaInicioChegada').value;
+    const horaFinal = document.getElementById('horaFinalChegada').value;
+    
+    if (!responsavel || !cte || !doca || !horaInicio || !horaFinal) {
+        alert('Todos os campos são obrigatórios!');
+        return;
+    }
+    
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const item = previsoes[previsaoSelecionada];
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
+    
+    // Calcular tempo
+    let tempoMinutos = 0;
+    let tempoFormatado = '00:00';
+    if (horaInicio && horaFinal) {
+        const [hI, mI] = horaInicio.split(':').map(Number);
+        const [hF, mF] = horaFinal.split(':').map(Number);
+        tempoMinutos = (hF * 60 + mF) - (hI * 60 + mI);
+        if (tempoMinutos < 0) tempoMinutos = 0;
+        const h = Math.floor(tempoMinutos / 60);
+        const m = tempoMinutos % 60;
+        tempoFormatado = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    const registroHistorico = {
+        sj: item.sj,
+        container: item.container,
+        cte: cte,
+        doca: doca,
+        horaInicio: horaInicio,
+        horaFinal: horaFinal,
+        responsavel: responsavel,
+        transportadora: item.transportadora || '-',
+        modalidade: item.modalImportacao || 'Marítimo',
+        dataRegistro: agora.toISOString(),
+        tempoMinutos: tempoMinutos,
+        tempoFormatado: tempoFormatado
+    };
+    
+    const atualizacaoPrevisao = {
+        status: 'CHEGOU',
+        dataChegada: hoje,
+        horaInicio: horaInicio,
+        horaFinal: horaFinal,
+        responsavel: responsavel,
+        cte: cte,
+        doca: doca,
+        timestampChegada: agora.toISOString()
+    };
+
+    try {
+        if (window.DB) {
+            await window.DB.adicionarHistorico(registroHistorico);
+            
+            if (item.id) {
+                await window.DB.atualizarPrevisao(item.id, atualizacaoPrevisao);
+            } else {
+                previsoes[previsaoSelecionada] = { ...item, ...atualizacaoPrevisao };
+                localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+            }
+            
+            if (window.DB.init) await window.DB.init();
+        }
+        
+        fecharModalChegada();
+        carregarContainerCards();
+        carregarKPIsPrevisao();
+        
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        alert('Erro ao salvar no sistema.');
+    }
+}

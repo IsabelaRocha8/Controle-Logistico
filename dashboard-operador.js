@@ -317,13 +317,19 @@ async function confirmarChegada() {
     }
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
+    
+    // Obter o item selecionado
     const item = previsoes[previsaoSelecionada];
     if (!item) return;
 
     const agora = new Date();
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
-
-    const payloadChegada = {
+    
+    // 1. Preparar dados para o HISTÓRICO (Para o Admin ver)
+    const registroHistorico = {
         sj: item.sj,
         container: item.container,
         cte,
@@ -337,26 +343,48 @@ async function confirmarChegada() {
         tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
         tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
     };
+    
+    // 2. Preparar dados para atualizar a PREVISÃO (Para mudar status e sair da lista)
+    const atualizacaoPrevisao = {
+        status: 'CHEGOU',
+        dataChegada: hoje,
+        horaInicio: horaInicio,
+        horaFinal: horaFinal,
+        responsavel: responsavel,
+        cte: cte,
+        doca: doca,
+        timestampChegada: agora.toISOString()
+    };
 
     try {
-        if (window.DB?.registrarChegada) {
-            await window.DB.registrarChegada(payloadChegada);
-        } else if (window.DB?.adicionarHistorico) {
-            await window.DB.adicionarHistorico(payloadChegada);
-            const hoje = agora.toISOString().split('T')[0];
-            previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
-            localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-        } else {
-            throw new Error('Integração de API indisponível.');
+        // Executar operações no Servidor (DB)
+        if (window.DB) {
+            // Salva no histórico global
+            await window.DB.adicionarHistorico(registroHistorico);
+            
+            // Atualiza o status da previsão se tiver ID (vindo do banco)
+            if (item.id) {
+                await window.DB.atualizarPrevisao(item.id, atualizacaoPrevisao);
+            } else {
+                // Fallback para local se não tiver ID (legado)
+                previsoes[previsaoSelecionada] = { ...item, ...atualizacaoPrevisao };
+                localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+            }
         }
-    } catch (err) {
-        mensagemErro.textContent = err?.message || 'Erro ao registrar chegada.';
-        mensagemErro.classList.add('show');
-        return;
-    }
 
-    fecharModalChegada();
-    carregarDashboardOperador();
+        fecharModalChegada();
+        
+        // Recarregar dados para garantir sincronia
+        if (window.DB && window.DB.init) {
+            await window.DB.init();
+        }
+        carregarDashboardOperador();
+
+    } catch (error) {
+        console.error("Erro ao registrar chegada:", error);
+        mensagemErro.textContent = 'Erro ao salvar no sistema. Tente novamente.';
+        mensagemErro.classList.add('show');
+    }
 }
 
 // ================= CALCULAR TEMPO MINUTOS =================
