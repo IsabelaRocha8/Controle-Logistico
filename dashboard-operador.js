@@ -291,33 +291,31 @@ function fecharModalChegada() {
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
     if (previsaoSelecionada === null) return;
-    
+
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
     const doca = document.getElementById('docaChegada').value;
     const horaInicio = document.getElementById('horaInicioChegada').value;
     const horaFinal = document.getElementById('horaFinalChegada').value;
     const mensagemErro = document.getElementById('mensagemErroChegada');
-    
-    // Validar campos obrigatórios
+
     if (!responsavel || !cte || !doca || !horaInicio || !horaFinal) {
         mensagemErro.textContent = 'Todos os campos são obrigatórios!';
         mensagemErro.classList.add('show');
         return;
     }
-    
-    // Validar hora final maior que hora início
+
     const [horaIni, minIni] = horaInicio.split(':').map(Number);
     const [horaFim, minFim] = horaFinal.split(':').map(Number);
     const minutosInicio = horaIni * 60 + minIni;
     const minutosFinal = horaFim * 60 + minFim;
-    
+
     if (minutosFinal <= minutosInicio) {
         mensagemErro.textContent = 'Hora Final deve ser maior que Hora Início!';
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
     const agora = new Date();
@@ -325,19 +323,22 @@ async function confirmarChegada() {
     
     // Obter o item selecionado
     const item = previsoes[previsaoSelecionada];
+    if (!item) return;
+
+    const agora = new Date();
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
     
     // 1. Preparar dados para o HISTÓRICO (Para o Admin ver)
     const registroHistorico = {
         sj: item.sj,
         container: item.container,
-        cte: cte,
-        doca: doca,
-        horaInicio: horaInicio,
-        horaFinal: horaFinal,
-        responsavel: responsavel,
+        cte,
+        doca,
+        horaInicio,
+        horaFinal,
+        responsavel,
         transportadora: item.transportadora || '-',
-        modalidade: modalidade,
+        modalidade,
         dataRegistro: agora.toISOString(),
         tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
         tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
