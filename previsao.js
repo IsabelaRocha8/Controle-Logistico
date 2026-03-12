@@ -277,6 +277,30 @@ function fecharModalChegada() {
     previsaoSelecionada = null;
 }
 
+function exibirModalFeedbackChegada(tipo, mensagem) {
+    const modal = document.getElementById('modalFeedbackChegada');
+    const titulo = document.getElementById('feedbackChegadaTitulo');
+    const texto = document.getElementById('feedbackChegadaMensagem');
+    const content = modal?.querySelector('.modal-feedback-content');
+
+    if (!modal || !titulo || !texto || !content) {
+        alert(mensagem);
+        return;
+    }
+
+    const isSucesso = tipo === 'sucesso';
+    titulo.textContent = isSucesso ? 'Chegada registrada com sucesso!' : 'Falha ao registrar chegada';
+    texto.textContent = mensagem;
+    content.classList.toggle('feedback-success', isSucesso);
+    content.classList.toggle('feedback-error', !isSucesso);
+    modal.style.display = 'flex';
+}
+
+function fecharModalFeedbackChegada() {
+    const modal = document.getElementById('modalFeedbackChegada');
+    if (modal) modal.style.display = 'none';
+}
+
 async function confirmarChegada() {
     if (previsaoSelecionada === null) return;
 
@@ -338,14 +362,17 @@ async function confirmarChegada() {
             throw new Error('Integração de API indisponível.');
         }
     } catch (err) {
-        mensagemErro.textContent = err?.message || 'Erro ao registrar chegada.';
+        const mensagemFalha = err?.message || 'Erro ao registrar chegada.';
+        mensagemErro.textContent = mensagemFalha;
         mensagemErro.classList.add('show');
+        exibirModalFeedbackChegada('erro', mensagemFalha);
         return;
     }
 
     fecharModalChegada();
     carregarKPIsPrevisao();
     carregarContainerCards();
+    exibirModalFeedbackChegada('sucesso', 'A chegada do container foi registrada no sistema.');
 }
 
 function calcularTempoMinutos(horaInicio, horaFinal) {

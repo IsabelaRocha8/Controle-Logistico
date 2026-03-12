@@ -932,6 +932,30 @@ body {
     border-top: 2px solid #E6F0FA;
 }
 
+
+.modal-feedback .modal-feedback-content {
+    max-width: 460px;
+    text-align: center;
+    padding: 28px;
+    border-top: 6px solid #00469B;
+}
+
+.modal-feedback .modal-feedback-content.feedback-success {
+    border-top-color: #27ae60;
+}
+
+.modal-feedback .modal-feedback-content.feedback-error {
+    border-top-color: #e74c3c;
+}
+
+.modal-feedback .modal-feedback-content h2 {
+    margin-bottom: 12px;
+}
+
+.modal-feedback .modal-feedback-content p {
+    margin-bottom: 18px;
+}
+
 /* ================= FILTROS COMPACTOS ================= */
 .filter-compact {
     background: #FFFFFF;
