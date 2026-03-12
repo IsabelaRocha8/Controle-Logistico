@@ -119,6 +119,17 @@ const DB = {
     return r;
   },
 
+
+  async registrarChegada(dados) {
+    if (!window.apiClient) {
+      throw new Error("API client não disponível");
+    }
+
+    const response = await window.apiClient.registrarChegada(dados);
+    await syncToLocal(window.apiClient.getPrevisoes, "previsoesChegada");
+    await syncToLocal(window.apiClient.getHistorico, "historico");
+    return response;
+  },
   async adicionarNil(dados) {
     if (!window.apiClient) {
       throw new Error("API client não disponível");

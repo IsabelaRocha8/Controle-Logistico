@@ -289,23 +289,13 @@ async function confirmarChegada() {
     }
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
-    const agora = new Date();
-    const hoje = agora.toISOString().split('T')[0];
-
-    previsoes[previsaoSelecionada].status = 'CHEGOU';
-    previsoes[previsaoSelecionada].dataChegada = hoje;
-    previsoes[previsaoSelecionada].horaInicio = horaInicio;
-    previsoes[previsaoSelecionada].horaFinal = horaFinal;
-    previsoes[previsaoSelecionada].responsavel = responsavel;
-    previsoes[previsaoSelecionada].cte = cte;
-    previsoes[previsaoSelecionada].doca = doca;
-    previsoes[previsaoSelecionada].timestampChegada = agora.toISOString();
-
     const item = previsoes[previsaoSelecionada];
+    if (!item) return;
+
+    const agora = new Date();
     const modalidade = (item.modalImportacao === 'Aereo') ? 'Aéreo' : 'Marítimo';
 
-    const registroHistorico = {
+    const payloadChegada = {
         sj: item.sj,
         container: item.container,
         cte,
@@ -321,19 +311,21 @@ async function confirmarChegada() {
     };
 
     try {
-        if (window.DB?.adicionarHistorico) {
-            await window.DB.adicionarHistorico(registroHistorico);
+        if (window.DB?.registrarChegada) {
+            await window.DB.registrarChegada(payloadChegada);
+        } else if (window.DB?.adicionarHistorico) {
+            await window.DB.adicionarHistorico(payloadChegada);
+            const hoje = agora.toISOString().split('T')[0];
+            previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
+            localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
         } else {
-            historico.push(registroHistorico);
-            localStorage.setItem('historico', JSON.stringify(historico));
+            throw new Error('Integração de API indisponível.');
         }
     } catch (err) {
-        console.error('Erro ao salvar histórico na API, mantendo local:', err);
-        historico.push(registroHistorico);
-        localStorage.setItem('historico', JSON.stringify(historico));
+        mensagemErro.textContent = err?.message || 'Erro ao registrar chegada.';
+        mensagemErro.classList.add('show');
+        return;
     }
-
-    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
 
     fecharModalChegada();
     carregarKPIsPrevisao();

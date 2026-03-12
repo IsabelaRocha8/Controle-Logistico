@@ -291,81 +291,70 @@ function fecharModalChegada() {
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
     if (previsaoSelecionada === null) return;
-    
+
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
     const doca = document.getElementById('docaChegada').value;
     const horaInicio = document.getElementById('horaInicioChegada').value;
     const horaFinal = document.getElementById('horaFinalChegada').value;
     const mensagemErro = document.getElementById('mensagemErroChegada');
-    
-    // Validar campos obrigatórios
+
     if (!responsavel || !cte || !doca || !horaInicio || !horaFinal) {
         mensagemErro.textContent = 'Todos os campos são obrigatórios!';
         mensagemErro.classList.add('show');
         return;
     }
-    
-    // Validar hora final maior que hora início
+
     const [horaIni, minIni] = horaInicio.split(':').map(Number);
     const [horaFim, minFim] = horaFinal.split(':').map(Number);
     const minutosInicio = horaIni * 60 + minIni;
     const minutosFinal = horaFim * 60 + minFim;
-    
+
     if (minutosFinal <= minutosInicio) {
         mensagemErro.textContent = 'Hora Final deve ser maior que Hora Início!';
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
-    const agora = new Date();
-    const hoje = agora.toISOString().split('T')[0];
-    
-    // Atualizar previsão com dados de chegada
-    previsoes[previsaoSelecionada].status = 'CHEGOU';
-    previsoes[previsaoSelecionada].dataChegada = hoje;
-    previsoes[previsaoSelecionada].horaInicio = horaInicio;
-    previsoes[previsaoSelecionada].horaFinal = horaFinal;
-    previsoes[previsaoSelecionada].responsavel = responsavel;
-    previsoes[previsaoSelecionada].cte = cte;
-    previsoes[previsaoSelecionada].doca = doca;
-    previsoes[previsaoSelecionada].timestampChegada = agora.toISOString();
-    
-    // Adicionar ao histórico imediatamente
     const item = previsoes[previsaoSelecionada];
+    if (!item) return;
+
+    const agora = new Date();
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
-    
-    const registroHistorico = {
+
+    const payloadChegada = {
         sj: item.sj,
         container: item.container,
-        cte: cte,
-        doca: doca,
-        horaInicio: horaInicio,
-        horaFinal: horaFinal,
-        responsavel: responsavel,
+        cte,
+        doca,
+        horaInicio,
+        horaFinal,
+        responsavel,
         transportadora: item.transportadora || '-',
-        modalidade: modalidade,
+        modalidade,
         dataRegistro: agora.toISOString(),
         tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
         tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
     };
+
     try {
-        if (window.DB?.adicionarHistorico) {
-            await window.DB.adicionarHistorico(registroHistorico);
+        if (window.DB?.registrarChegada) {
+            await window.DB.registrarChegada(payloadChegada);
+        } else if (window.DB?.adicionarHistorico) {
+            await window.DB.adicionarHistorico(payloadChegada);
+            const hoje = agora.toISOString().split('T')[0];
+            previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
+            localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
         } else {
-            historico.push(registroHistorico);
-            localStorage.setItem('historico', JSON.stringify(historico));
+            throw new Error('Integração de API indisponível.');
         }
     } catch (err) {
-        console.error('Erro ao salvar histórico na API, mantendo local:', err);
-        historico.push(registroHistorico);
-        localStorage.setItem('historico', JSON.stringify(historico));
+        mensagemErro.textContent = err?.message || 'Erro ao registrar chegada.';
+        mensagemErro.classList.add('show');
+        return;
     }
 
-    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-    
     fecharModalChegada();
     carregarDashboardOperador();
 }
