@@ -186,9 +186,10 @@ async function salvarPrevisao() {
 // ================= DASHBOARD =================
 function carregarKPIsPrevisao() {
     const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const pendentes = obterPrevisoesPendentes(dados);
     const hoje = new Date().toISOString().split('T')[0];
-    const atrasados = dados.filter(i => i.status !== 'CHEGOU' && i.dataPrevisao < hoje).length;
-    const hojeCount = dados.filter(i => i.status !== 'CHEGOU' && i.dataPrevisao === hoje).length;
+    const atrasados = pendentes.filter(i => i.dataPrevisao < hoje).length;
+    const hojeCount = pendentes.filter(i => i.dataPrevisao === hoje).length;
 
     if(document.getElementById('kpiAtrasados')) document.getElementById('kpiAtrasados').textContent = atrasados;
     if(document.getElementById('kpiHoje')) document.getElementById('kpiHoje').textContent = hojeCount;
@@ -196,7 +197,7 @@ function carregarKPIsPrevisao() {
 
 function carregarContainerCards() {
     const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = dados.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPrevisoesPendentes(dados);
     const containerUI = document.getElementById('containerCards');
     if (!containerUI) return;
 
@@ -223,6 +224,21 @@ function carregarContainerCards() {
     `).join('');
 }
 
+function obterPrevisoesPendentes(previsoes) {
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
+    const containersNoHistorico = new Set(
+        historico
+            .map(item => (item?.container || '').toString().trim().toUpperCase())
+            .filter(Boolean)
+    );
+
+    return previsoes.filter(item => {
+        const status = (item?.status || '').toString().trim().toUpperCase();
+        const container = (item?.container || '').toString().trim().toUpperCase();
+        return status !== 'CHEGOU' && !containersNoHistorico.has(container);
+    });
+}
+
 function verificarPermissoesCadastro() {
     const perfil = localStorage.getItem('perfilUsuario');
     const form = document.getElementById('formPrevisao');
@@ -232,7 +248,7 @@ function verificarPermissoesCadastro() {
 // ================= REGISTRAR CHEGADA =================
 function abrirModalChegada(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = previsoes.filter(item => item.status !== 'CHEGOU');
+    const pendentes = obterPrevisoesPendentes(previsoes);
 
     previsaoSelecionada = previsoes.indexOf(pendentes[index]);
     const previsao = pendentes[index];
