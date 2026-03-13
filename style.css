@@ -1131,7 +1131,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 70, 155, 0.08);
 }
 
-/* ================= BOT\u00c3O EXCLUIR CARD ================= */
+/* ================= BOTÃO EXCLUIR CARD ================= */
 .container-card-header {
     display: flex;
     justify-content: space-between;
@@ -1230,4 +1230,100 @@ body {
     font-weight: 700;
     color: #00469B;
     font-size: 13px;
+}
+
+/* ================= IMPRESSÃO ETIQUETAS ================= */
+@media print {
+    /* Ocultar tudo o que não seja o conteúdo da etiqueta */
+    .sidebar, 
+    .header, 
+    .filters-container, 
+    .btn-card-action, 
+    .btn-card-delete {
+        display: none !important;
+    }
+
+    .main-wrapper {
+        margin-left: 0 !important;
+        background: white !important;
+    }
+
+    .dashboard-content {
+        padding: 0 !important;
+    }
+
+    .dashboard-layout {
+        display: block !important;
+        background: white !important;
+    }
+
+    body {
+        background: white !important;
+    }
+
+    /* Configuração da página para imprimir em modo paisagem (deitada) */
+    @page {
+        size: landscape;
+        margin: 0; /* Remover margens automáticas para impressora térmica */
+    }
+
+    /* Ajustar o layout do grid para imprimir cada etiqueta separadamente */
+    .container-cards-grid {
+        display: block !important;
+        gap: 0 !important;
+    }
+
+    .container-card {
+        page-break-after: always; /* Cada etiqueta fica numa nova folha */
+        width: 100% !important;
+        height: 100vh !important; /* Ocupa o ecrã/papel inteiro */
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 30px !important; /* Mais espaçamento interno */
+        border-top: none !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Aumentar consideravelmente as fontes para garantir a legibilidade */
+    .container-card-body {
+        gap: 30px !important;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .container-card-info {
+        gap: 25px !important;
+    }
+
+    .container-card-info i {
+        font-size: 48px !important;
+        width: 60px !important;
+    }
+
+    .info-label {
+        font-size: 20px !important;
+        color: #000 !important;
+    }
+
+    .info-value {
+        font-size: 38px !important; /* Textos muito maiores */
+        color: #000 !important;
+        font-weight: bold !important;
+    }
+
+    .container-card-badges {
+        margin-bottom: 20px !important;
+    }
+
+    .container-card-badges .badge {
+        font-size: 24px !important;
+        padding: 14px 28px !important;
+        border-width: 3px !important;
+    }
 }

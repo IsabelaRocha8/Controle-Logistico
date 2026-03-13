@@ -590,11 +590,10 @@ function exibirHistorico(dados) {
     tbody.innerHTML = '';
     
     dados.forEach((item) => {
-        const tr = document.createElement('tr');
-        
         const dataRegistro = new Date(item.dataRegistro);
         const dataFormatada = dataRegistro.toLocaleDateString('pt-BR');
         
+        const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.sj}</td>
             <td>${item.container}</td>
@@ -1319,27 +1318,90 @@ function criarGraficoTransportadoras(historico) {
 }
 
 
-// ================= RELATÓRIO NIL DO DIA =================
-function gerarRelatorioNILDia() {
+// ================= RELATÓRIO NIL POR PERÍODO =================
+function abrirModalRelatorio() {
     if (!validarPermissaoAdmin()) {
-        alert('Apenas ADMIN pode gerar o relatório completo do dia.');
+        alert('Apenas ADMIN pode gerar relatórios.');
+        return;
+    }
+    const modal = document.getElementById('modalRelatorio');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Define a data de hoje (local) como padrão nos dois campos
+        const hojeObj = new Date();
+        const ano = hojeObj.getFullYear();
+        const mes = String(hojeObj.getMonth() + 1).padStart(2, '0');
+        const dia = String(hojeObj.getDate()).padStart(2, '0');
+        const dataHojeStr = `${ano}-${mes}-${dia}`;
+        
+        document.getElementById('relatorioDataInicio').value = dataHojeStr;
+        document.getElementById('relatorioDataFim').value = dataHojeStr;
+    } else {
+        alert('Modal de relatório não encontrado no HTML.');
+    }
+}
+
+function fecharModalRelatorio() {
+    const modal = document.getElementById('modalRelatorio');
+    if (modal) modal.style.display = 'none';
+}
+
+function obterDataLocalISO(dataValor) {
+    if (!dataValor) return '';
+    // Se a string já estiver no formato YYYY-MM-DD
+    if (typeof dataValor === 'string' && dataValor.length === 10 && dataValor.includes('-')) {
+        return dataValor;
+    }
+    const d = new Date(dataValor);
+    if (isNaN(d.getTime())) return '';
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
+
+function gerarRelatorioPeriodo() {
+    if (!validarPermissaoAdmin()) {
+        alert('Apenas ADMIN pode gerar o relatório.');
         return;
     }
 
-    const hoje = new Date().toISOString().split('T')[0];
+    const dataInicio = document.getElementById('relatorioDataInicio').value;
+    const dataFim = document.getElementById('relatorioDataFim').value;
+
+    if (!dataInicio || !dataFim) {
+        alert('Por favor, selecione a data inicial e final.');
+        return;
+    }
+
+    if (dataInicio > dataFim) {
+        alert('A data inicial não pode ser maior que a data final.');
+        return;
+    }
+
     const historico = DB.obter('historico') || [];
     const previsoes = DB.obter('previsoesChegada') || [];
 
-    const chegadasDia = historico.filter(item => {
-        const data = new Date(item.dataRegistro).toISOString().split('T')[0];
-        return data === hoje;
+    // Filtra apenas os registros que estão dentro do período escolhido (comparando data local YYYY-MM-DD)
+    const chegadasPeriodo = historico.filter(item => {
+        const dataLocal = obterDataLocalISO(item.dataRegistro);
+        return dataLocal >= dataInicio && dataLocal <= dataFim;
     });
 
-    const previsoesDia = previsoes.filter(item => (item.dataRegistro || item.dataChegada || '') === hoje);
+    const previsoesPeriodo = previsoes.filter(item => {
+        const dataBruta = item.dataRegistro || item.dataChegada || item.dataPrevisao || '';
+        const dataLocal = obterDataLocalISO(dataBruta);
+        return dataLocal >= dataInicio && dataLocal <= dataFim;
+    });
+
+    // Formata as datas para o título ficar bonito no PDF
+    const dataInicioFmt = new Date(dataInicio + 'T12:00:00').toLocaleDateString('pt-BR');
+    const dataFimFmt = new Date(dataFim + 'T12:00:00').toLocaleDateString('pt-BR');
+    const tituloPeriodo = dataInicio === dataFim ? dataInicioFmt : `de ${dataInicioFmt} até ${dataFimFmt}`;
 
     const w = window.open('', '_blank');
     w.document.write(`
-        <html><head><title>Relatório NIL do Dia</title>
+        <html><head><title>Relatório NIL - ${tituloPeriodo}</title>
         <style>
             body { font-family: Arial, sans-serif; margin: 20px; color: #222; }
             h1, h2 { color: #00469B; }
@@ -1347,16 +1409,20 @@ function gerarRelatorioNILDia() {
             th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
             th { background: #f4f7fb; }
         </style></head><body>
-        <h1>Relatório Completo do Dia (${new Date().toLocaleDateString('pt-BR')})</h1>
-        <h2>Containers que chegaram no dia</h2>
-        <table><thead><tr><th>SJ</th><th>Container</th><th>CTE</th><th>Doca</th><th>Responsável</th><th>Hora Início</th><th>Hora Final</th></tr></thead><tbody>
-        ${chegadasDia.map(r => `<tr><td>${r.sj}</td><td>${r.container}</td><td>${r.cte}</td><td>${r.doca}</td><td>${r.responsavel || '-'}</td><td>${r.horaInicio || '-'}</td><td>${r.horaFinal || '-'}</td></tr>`).join('') || '<tr><td colspan="7">Sem registros de chegada hoje.</td></tr>'}
+        <h1>Relatório Logístico (${tituloPeriodo})</h1>
+        <h2>Containers que chegaram no período</h2>
+        <table><thead><tr><th>Data</th><th>SJ</th><th>Container</th><th>CTE</th><th>Doca</th><th>Responsável</th><th>Hora Início</th><th>Hora Final</th></tr></thead><tbody>
+        ${chegadasPeriodo.map(r => `<tr><td>${new Date(r.dataRegistro).toLocaleDateString('pt-BR')}</td><td>${r.sj}</td><td>${r.container}</td><td>${r.cte}</td><td>${r.doca}</td><td>${r.responsavel || '-'}</td><td>${r.horaInicio || '-'}</td><td>${r.horaFinal || '-'}</td></tr>`).join('') || '<tr><td colspan="8">Sem registros de chegada no período.</td></tr>'}
         </tbody></table>
-        <h2>Histórico/Previsões do dia</h2>
+        <h2>Histórico/Previsões no período</h2>
         <table><thead><tr><th>Status</th><th>SJ</th><th>Container</th><th>Modal</th><th>Data</th><th>Hora</th></tr></thead><tbody>
-        ${previsoesDia.map(p => `<tr><td>${p.status}</td><td>${p.sj}</td><td>${p.container}</td><td>${p.modalImportacao || '-'}</td><td>${p.dataRegistro || p.dataChegada || '-'}</td><td>${p.horaRegistro || '-'}</td></tr>`).join('') || '<tr><td colspan="6">Sem previsões/histórico hoje.</td></tr>'}
+        ${previsoesPeriodo.map(p => `<tr><td>${p.status || '-'}</td><td>${p.sj}</td><td>${p.container}</td><td>${p.modalImportacao || '-'}</td><td>${obterDataLocalISO(p.dataRegistro || p.dataChegada || p.dataPrevisao).split('-').reverse().join('/')}</td><td>${p.horaRegistro || '-'}</td></tr>`).join('') || '<tr><td colspan="6">Sem previsões/histórico no período.</td></tr>'}
         </tbody></table>
+        <script>
+            setTimeout(() => window.print(), 500);
+        </script>
         </body></html>
     `);
     w.document.close();
+    fecharModalRelatorio();
 }
