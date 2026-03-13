@@ -10,7 +10,6 @@
 </head>
 <body>
     <div class="dashboard-layout">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <i class="fas fa-shipping-fast"></i>
@@ -49,9 +48,7 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-wrapper">
-            <!-- Top Header -->
             <header class="header">
                 <div class="header-left">
                     <h1>Dashboard - Controle de Containers</h1>
@@ -67,9 +64,7 @@
                 </div>
             </header>
 
-            <!-- Dashboard Content -->
             <div class="dashboard-content">
-                <!-- KPI Cards -->
                 <div class="kpi-row">
                     <div class="kpi-card">
                         <div class="kpi-icon" style="background: linear-gradient(135deg, #00469B 0%, #00336F 100%);">
@@ -112,7 +107,6 @@
                     </div>
                 </div>
 
-                <!-- Novos Cards -->
                 <div class="kpi-row">
                     <div class="kpi-card">
                         <div class="kpi-icon blue">
@@ -155,7 +149,6 @@
                     </div>
                 </div>
                 
-                <!-- Card Chegadas -->
                 <div class="kpi-row">
                     <div class="kpi-card">
                         <div class="kpi-icon green">
@@ -198,19 +191,17 @@
                     </div>
                 </div>
 
-                <!-- Botão Emitir NIL -->
                 <div style="margin-bottom: 28px;">
                     <a href="nil.html" class="btn btn-primary" style="text-decoration: none; display: inline-flex; margin-right: 8px;">
                         <i class="fas fa-file-alt"></i>
                         Emitir NIL
                     </a>
-                    <button class="btn btn-secondary" onclick="gerarRelatorioNILDia()" style="display: inline-flex;">
+                    <button class="btn btn-secondary" onclick="abrirModalRelatorio()" style="display: inline-flex;">
                         <i class="fas fa-print"></i>
-                        Gerar Relatório NIL do Dia
+                        Gerar Relatório por Período
                     </button>
                 </div>
 
-                <!-- Charts Grid -->
                 <div class="charts-row">
                     <div class="chart-card">
                         <div class="chart-title">
@@ -247,7 +238,6 @@
                     </div>
                 </div>
                 
-                <!-- Rankings -->
                 <div class="charts-row">
                     <div class="chart-card">
                         <div class="chart-title">
@@ -267,6 +257,31 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="modalRelatorio" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Gerar Relatório por Período</h3>
+                <span class="modal-close" onclick="fecharModalRelatorio()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #00469B; font-weight: bold;">Data Inicial:</label>
+                    <input type="date" id="relatorioDataInicio" style="width: 100%; padding: 12px; border: 2px solid #E6F0FA; border-radius: 8px;">
+                </div>
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 8px; color: #00469B; font-weight: bold;">Data Final:</label>
+                    <input type="date" id="relatorioDataFim" style="width: 100%; padding: 12px; border: 2px solid #E6F0FA; border-radius: 8px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModalRelatorio()">Cancelar</button>
+                <button class="btn btn-primary" onclick="gerarRelatorioPeriodo()">
+                    <i class="fas fa-print"></i> Gerar Relatório
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="js/apiClient.js"></script>
