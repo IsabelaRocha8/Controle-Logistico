@@ -1,3 +1,6 @@
+// ================= VARIÁVEL GLOBAL PARA ARMAZENAR REGISTROS =================
+let registrosDescarregamento = [];
+
 // ================= BUSCAR SJ =================
 // ================= BUSCAR SJ =================
 function buscarSJ() {
@@ -29,17 +32,18 @@ function buscarSJ() {
     mensagem.textContent = 'SJ encontrada! Preencha os dados adicionais e gere a NIL.';
     mensagem.classList.add('success');
     
-    // ALTERAÇÃO: Consolidar os dados de todos os contêineres e CTEs
-    const registroConsolidado = {
-        ...registros[0], // Aproveita dados base do primeiro registro (horaInicio, responsavel, etc)
-        // Junta todos os números de contêineres separados por vírgula e espaço
-        container: registros.map(r => r.container).filter(Boolean).join(', '),
-        // Junta todos os números de CTEs sem repeti-los (usando Set)
-        cte: [...new Set(registros.map(r => r.cte).filter(Boolean))].join(', ')
-    };
+    // Armazenar registros para uso posterior
+    registrosDescarregamento = registros;
     
-    // Preencher formulário com os dados consolidados
-    preencherFormulario(registroConsolidado);
+    // Utilizar o primeiro registro como base para dados gerais
+    const registroBase = registros[0];
+    
+    // Preencher formulário com os dados base
+    preencherFormulario(registroBase);
+    
+    // Preencher a tabela de descarregamento com todos os registros
+    preencherTabelaDescarregamento(registros);
+    
     document.getElementById('nilFormulario').style.display = 'block';
     
     // Verificar permissão e controlar botão imprimir
@@ -51,10 +55,7 @@ function buscarSJ() {
 // ================= PREENCHER FORMULÁRIO =================
 function preencherFormulario(registro) {
     document.getElementById('processoSJ').value = registro.sj;
-    document.getElementById('numeroContainer').value = registro.container;
-    document.getElementById('numeroCTE').value = registro.cte;
-    document.getElementById('horaInicio').value = registro.horaInicio;
-    document.getElementById('horaFinal').value = registro.horaFinal;
+    // Mantém os dados gerais apenas
     document.getElementById('responsaveisDescarregamento').value = registro.responsavel;
     
     // Data do primeiro lançamento
@@ -70,6 +71,73 @@ function preencherFormulario(registro) {
     
     // Adicionar conversão automática para maiúsculo nos campos editáveis
     adicionarConversaoMaiusculoNIL();
+}
+
+// ================= PREENCHER TABELA DESCARREGAMENTO =================
+function preencherTabelaDescarregamento(registros) {
+    // Encontrar todos os inputs da tabela de descarregamento
+    const todosTabelasNIL = document.querySelectorAll('table.nil-table');
+    let tabelaDescarregamento = null;
+    
+    // Procurar pela tabela que contém o cabeçalho "INFORMAÇÕES DESCARREGAMENTO"
+    for (let i = 0; i < todosTabelasNIL.length; i++) {
+        const textoTabela = todosTabelasNIL[i].textContent;
+        if (textoTabela.includes('INFORMAÇÕES DESCARREGAMENTO') && textoTabela.includes('Nº CONTAINER')) {
+            tabelaDescarregamento = todosTabelasNIL[i];
+            break;
+        }
+    }
+    
+    if (!tabelaDescarregamento) {
+        console.error('Tabela de descarregamento não encontrada');
+        return;
+    }
+    
+    // Obter todas as linhas da tabela
+    const todasAsLinhas = tabelaDescarregamento.querySelectorAll('tbody tr, tr:not(:first-child):not(:nth-child(2))');
+    const linhas = Array.from(tabelaDescarregamento.querySelectorAll('tr'));
+    
+    // Encontrar o índice da linha de cabeçalho (contém "Nº CONTAINER")
+    let indiceLinhaHeader = -1;
+    for (let i = 0; i < linhas.length; i++) {
+        if (linhas[i].textContent.includes('Nº CONTAINER')) {
+            indiceLinhaHeader = i;
+            break;
+        }
+    }
+    
+    if (indiceLinhaHeader === -1) {
+        console.error('Linha de cabeçalho não encontrada');
+        return;
+    }
+    
+    // Limpar os campos de entrada existentes (mantendo a estrutura)
+    for (let i = indiceLinhaHeader + 1; i < linhas.length; i++) {
+        const inputs = linhas[i].querySelectorAll('input:not([readonly])');
+        inputs.forEach(input => {
+            input.value = '';
+        });
+    }
+    
+    // Preencher com os dados dos registros
+    registros.forEach((registro, index) => {
+        const linhaIndex = indiceLinhaHeader + 1 + index;
+        if (linhaIndex < linhas.length) {
+            const linha = linhas[linhaIndex];
+            const inputs = linha.querySelectorAll('input');
+            
+            // Estrutura esperada: container, cte, qtdeCaixa, horaInicio, horaFinal, conferencia
+            // Os campos readonly (container, cte, horaInicio, horaFinal) estão desabilitados
+            if (inputs.length >= 6) {
+                inputs[0].value = registro.container || ''; // Nº CONTAINER (readonly)
+                inputs[1].value = registro.cte || '';         // Nº CT-E (readonly)
+                inputs[2].value = '';                         // QTDE. CAIXA (editável)
+                inputs[3].value = registro.horaInicio || '';  // HORA INÍCIO (readonly)
+                inputs[4].value = registro.horaFinal || '';   // HORA FINAL (readonly)
+                // inputs[5] - CONFERÊNCIA (editável) - deixar em branco
+            }
+        }
+    });
 }
 
 // ================= CONTROLAR BOTÃO IMPRIMIR =================
@@ -196,12 +264,16 @@ function gerarNIL() {
 // ================= IMPRIMIR NIL =================
 function imprimirNIL() {
     const sj = document.getElementById('processoSJ').value;
-    const container = document.getElementById('numeroContainer').value;
     
     if (!sj) {
         alert('Busque uma SJ primeiro!');
         return;
     }
+    
+    // Coletar containers dos registros armazenados
+    const container = registrosDescarregamento.length > 0 
+        ? registrosDescarregamento.map(r => r.container).join(', ')
+        : '';
     
     const perfil = localStorage.getItem('perfilUsuario');
     if (!['ADMIN', 'VISUALIZADOR', 'IMPORTACAO'].includes(perfil)) {
