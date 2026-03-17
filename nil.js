@@ -1,4 +1,5 @@
 // ================= BUSCAR SJ =================
+// ================= BUSCAR SJ =================
 function buscarSJ() {
     const sj = formatarMaiusculo(document.getElementById('inputSJ').value);
     const mensagem = document.getElementById('mensagemBusca');
@@ -14,9 +15,11 @@ function buscarSJ() {
     
     // Buscar no histórico
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
-    const registro = historico.find(item => item.sj === sj);
     
-    if (!registro) {
+    // ALTERAÇÃO: Usar .filter() para pegar TODOS os registros com essa SJ
+    const registros = historico.filter(item => item.sj === sj);
+    
+    if (registros.length === 0) {
         mensagem.textContent = 'SJ não encontrada no sistema!';
         mensagem.classList.add('error');
         document.getElementById('nilFormulario').style.display = 'none';
@@ -26,8 +29,17 @@ function buscarSJ() {
     mensagem.textContent = 'SJ encontrada! Preencha os dados adicionais e gere a NIL.';
     mensagem.classList.add('success');
     
-    // Preencher formulário
-    preencherFormulario(registro);
+    // ALTERAÇÃO: Consolidar os dados de todos os contêineres e CTEs
+    const registroConsolidado = {
+        ...registros[0], // Aproveita dados base do primeiro registro (horaInicio, responsavel, etc)
+        // Junta todos os números de contêineres separados por vírgula e espaço
+        container: registros.map(r => r.container).filter(Boolean).join(', '),
+        // Junta todos os números de CTEs sem repeti-los (usando Set)
+        cte: [...new Set(registros.map(r => r.cte).filter(Boolean))].join(', ')
+    };
+    
+    // Preencher formulário com os dados consolidados
+    preencherFormulario(registroConsolidado);
     document.getElementById('nilFormulario').style.display = 'block';
     
     // Verificar permissão e controlar botão imprimir
@@ -36,7 +48,6 @@ function buscarSJ() {
     // Renderizar histórico de impressões
     renderizarHistoricoImpressao();
 }
-
 // ================= PREENCHER FORMULÁRIO =================
 function preencherFormulario(registro) {
     document.getElementById('processoSJ').value = registro.sj;
