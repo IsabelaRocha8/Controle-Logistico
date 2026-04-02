@@ -1,29 +1,29 @@
 // ================= INICIALIZAÇÃO =================
 document.addEventListener("DOMContentLoaded", async function () {
-  verificarLogin();
+    verificarLogin();
 
-  const paginaAtual = window.location.pathname.split("/").pop();
-  const usuarioLogado = localStorage.getItem("usuarioLogado");
+    const paginaAtual = window.location.pathname.split("/").pop();
+    const usuarioLogado = localStorage.getItem("usuarioLogado");
 
-  if (!usuarioLogado && paginaAtual !== "login.html") return;
+    if (!usuarioLogado && paginaAtual !== "login.html") return;
 
-  if (window.DB?.init) {
-    await window.DB.init();
-  }
+    if (window.DB?.init) {
+        await window.DB.init();
+    }
 
-  inicializarPagina();
+    inicializarPagina();
 });
 // ================= VERIFICAR LOGIN =================
 function verificarLogin() {
     const usuarioLogado = localStorage.getItem('usuarioLogado');
     const paginaAtual = window.location.pathname.split('/').pop();
-    
+
     // Se não está logado e não está na página de login, redireciona
     if (!usuarioLogado && paginaAtual !== 'login.html') {
         window.location.href = 'login.html';
         return;
     }
-    
+
     // Se está logado e está na página de login, redireciona para dashboard
     if (usuarioLogado && paginaAtual === 'login.html') {
         const perfil = localStorage.getItem('perfilUsuario');
@@ -34,13 +34,13 @@ function verificarLogin() {
         }
         return;
     }
-    
+
     // Verificar permissão de acesso à página
     if (usuarioLogado && paginaAtual !== 'login.html') {
         verificarPerfil(paginaAtual);
         renderizarMenuLateral();
     }
-    
+
     // Exibir nome do usuário nas páginas internas
     if (usuarioLogado && paginaAtual !== 'login.html') {
         const nomeUsuarioElement = document.getElementById('nomeUsuario');
@@ -182,7 +182,7 @@ function renderizarMenuLateral() {
 function inicializarLogin() {
     const form = document.getElementById('formLogin');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             realizarLogin();
         });
@@ -252,7 +252,7 @@ function validarPermissaoAdmin() {
 // ================= INICIALIZAR PÁGINA =================
 function inicializarPagina() {
     const pagina = window.location.pathname.split('/').pop();
-    
+
     if (pagina === 'login.html') {
         inicializarLogin();
     } else if (pagina === 'index.html' || pagina === '') {
@@ -272,11 +272,11 @@ function inicializarPagina() {
 function inicializarCadastroMaritimo() {
     const form = document.getElementById('formCadastroMaritimo');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             salvarContainer('maritimo');
         });
-        
+
         // Adicionar conversão automática para maiúsculo
         adicionarConversaoMaiusculo('sj');
         adicionarConversaoMaiusculo('container');
@@ -289,11 +289,11 @@ function inicializarCadastroMaritimo() {
 function inicializarCadastroAereo() {
     const form = document.getElementById('formCadastroAereo');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             salvarContainer('aereo');
         });
-        
+
         // Adicionar conversão automática para maiúsculo
         adicionarConversaoMaiusculo('sjAereo');
         adicionarConversaoMaiusculo('containerAereo');
@@ -307,7 +307,7 @@ function inicializarCadastroAereo() {
 function adicionarConversaoMaiusculo(elementId) {
     const element = document.getElementById(elementId);
     if (element) {
-        element.addEventListener('input', function(e) {
+        element.addEventListener('input', function (e) {
             const start = e.target.selectionStart;
             const end = e.target.selectionEnd;
             e.target.value = e.target.value.toUpperCase();
@@ -343,17 +343,17 @@ function validarCampos(dados) {
             return { valido: false, mensagem: 'Todos os campos são obrigatórios!' };
         }
     }
-    
+
     // Validar container (11 caracteres)
     if (!validarContainer(dados.container)) {
         return { valido: false, mensagem: 'Container inválido! Deve conter exatamente 11 caracteres.' };
     }
-    
+
     // Validar formato ISO 6346
     if (!validarISOContainer(dados.container)) {
         return { valido: false, mensagem: 'Container fora do padrão ISO (AAAA9999999).' };
     }
-    
+
     return { valido: true };
 }
 
@@ -379,20 +379,20 @@ function validarSJJaCadastrada(sj) {
 function calcularTempo(horaInicio, horaFinal) {
     const [horaIni, minIni] = horaInicio.split(':').map(Number);
     const [horaFim, minFim] = horaFinal.split(':').map(Number);
-    
+
     const minutosInicio = horaIni * 60 + minIni;
     const minutosFinal = horaFim * 60 + minFim;
-    
+
     const diferencaMinutos = minutosFinal - minutosInicio;
-    
+
     if (diferencaMinutos < 0) {
         return { valido: false, minutos: 0, formatado: '00:00' };
     }
-    
+
     const horas = Math.floor(diferencaMinutos / 60);
     const minutos = diferencaMinutos % 60;
     const formatado = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
-    
+
     return { valido: true, minutos: diferencaMinutos, formatado: formatado };
 }
 
@@ -401,22 +401,22 @@ function pesquisarSJ() {
     const sj = document.getElementById('sj').value.trim();
     const mensagemErro = document.getElementById('mensagemErro');
     const mensagemSucesso = document.getElementById('mensagemSucesso');
-    
+
     // Limpar mensagens
     mensagemErro.textContent = '';
     mensagemErro.classList.remove('show');
     mensagemSucesso.textContent = '';
     mensagemSucesso.classList.remove('show');
-    
+
     if (!sj) {
         mensagemErro.textContent = 'Digite o SJ para pesquisar!';
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
     const sjExiste = historico.some(item => item.sj === sj);
-    
+
     if (sjExiste) {
         mensagemSucesso.textContent = 'SJ encontrada no sistema!';
         mensagemSucesso.classList.add('show');
@@ -430,22 +430,22 @@ function pesquisarSJAereo() {
     const sj = document.getElementById('sjAereo').value.trim();
     const mensagemErro = document.getElementById('mensagemErroAereo');
     const mensagemSucesso = document.getElementById('mensagemSucessoAereo');
-    
+
     // Limpar mensagens
     mensagemErro.textContent = '';
     mensagemErro.classList.remove('show');
     mensagemSucesso.textContent = '';
     mensagemSucesso.classList.remove('show');
-    
+
     if (!sj) {
         mensagemErro.textContent = 'Digite o SJ para pesquisar!';
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
     const sjExiste = historico.some(item => item.sj === sj);
-    
+
     if (sjExiste) {
         mensagemSucesso.textContent = 'SJ encontrada no sistema!';
         mensagemSucesso.classList.add('show');
@@ -459,7 +459,7 @@ function pesquisarSJAereo() {
 function salvarContainer(tipo) {
     let dados;
     let mensagemErro, mensagemSucesso;
-    
+
     // Define os elementos de mensagem e captura os dados com base no formulário de origem
     if (tipo === 'maritimo') {
         dados = {
@@ -491,13 +491,13 @@ function salvarContainer(tipo) {
         mensagemErro = document.getElementById('mensagemErroAereo');
         mensagemSucesso = document.getElementById('mensagemSucessoAereo');
     }
-    
+
     // Limpar mensagens anteriores
     mensagemErro.textContent = '';
     mensagemErro.classList.remove('show');
     mensagemSucesso.textContent = '';
     mensagemSucesso.classList.remove('show');
-    
+
     // Validar campos obrigatórios e formato
     const validacao = validarCampos(dados);
     if (!validacao.valido) {
@@ -505,7 +505,7 @@ function salvarContainer(tipo) {
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     // Calcular tempo de descarregamento
     const tempo = calcularTempo(dados.horaInicio, dados.horaFinal);
     if (!tempo.valido) {
@@ -513,7 +513,7 @@ function salvarContainer(tipo) {
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     // Adicionar metadados de tempo aos dados
     dados.tempoMinutos = tempo.minutos;
     dados.tempoFormatado = tempo.formatado;
@@ -524,7 +524,7 @@ function salvarContainer(tipo) {
         mensagemErro.classList.add('show');
         return;
     }
-    
+
     // Persistência: Envia para a API e atualiza o armazenamento local
     if (window.DB && typeof DB.adicionarHistorico === "function") {
         DB.adicionarHistorico(dados)
@@ -535,7 +535,7 @@ function salvarContainer(tipo) {
 
                 mensagemSucesso.textContent = 'Contentor registado com sucesso!';
                 mensagemSucesso.classList.add('show');
-                
+
                 // Limpa o formulário após o sucesso
                 setTimeout(() => {
                     limparFormulario(tipo === 'maritimo' ? 'formCadastroMaritimo' : 'formCadastroAereo');
@@ -556,16 +556,16 @@ function salvarContainer(tipo) {
 // ================= LIMPAR FORMULÁRIO =================
 function limparFormulario(formId) {
     document.getElementById(formId).reset();
-    
+
     // Limpar mensagens
     const mensagensErro = document.querySelectorAll('.error-message');
     const mensagensSucesso = document.querySelectorAll('.success-message');
-    
+
     mensagensErro.forEach(msg => {
         msg.textContent = '';
         msg.classList.remove('show');
     });
-    
+
     mensagensSucesso.forEach(msg => {
         msg.textContent = '';
         msg.classList.remove('show');
@@ -581,18 +581,18 @@ function carregarHistorico() {
 function exibirHistorico(dados) {
     const tbody = document.getElementById('tabelaHistorico');
     const isAdmin = validarPermissaoAdmin();
-    
+
     if (dados.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${isAdmin ? '11' : '10'}" class="no-data">Nenhum registro encontrado</td></tr>`;
         return;
     }
-    
+
     tbody.innerHTML = '';
-    
+
     dados.forEach((item) => {
         const dataRegistro = new Date(item.dataRegistro);
         const dataFormatada = dataRegistro.toLocaleDateString('pt-BR');
-        
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${item.sj}</td>
@@ -607,7 +607,7 @@ function exibirHistorico(dados) {
             <td>${item.modalidade}</td>
             ${isAdmin && item.id ? `<td><button class="btn btn-sm" style="background: #dc3545; color: white; padding: 6px 12px;" onclick="confirmarExclusao(${item.id})"><i class="fas fa-trash"></i></button></td>` : ''}
         `;
-        
+
         tbody.appendChild(tr);
     });
 }
@@ -615,27 +615,27 @@ function exibirHistorico(dados) {
 // ================= FILTROS =================
 function aplicarFiltros() {
     const historico = DB.obter('historico');
-    
+
     const dataInicio = document.getElementById('filtroDataInicio').value;
     const dataFim = document.getElementById('filtroDataFim').value;
     const doca = document.getElementById('filtroDoca').value;
     const cliente = document.getElementById('filtroCliente').value.toLowerCase();
     const container = document.getElementById('filtroContainerHistorico').value.toUpperCase().trim();
-    
+
     let dadosFiltrados = historico.filter(item => {
         let passa = true;
-        
+
         const dataRegistro = new Date(item.dataRegistro).toISOString().split('T')[0];
-        
+
         if (dataInicio && dataRegistro < dataInicio) passa = false;
         if (dataFim && dataRegistro > dataFim) passa = false;
         if (doca && item.doca !== doca) passa = false;
         if (cliente && !item.responsavel.toLowerCase().includes(cliente)) passa = false;
         if (container && !item.container.includes(container)) passa = false;
-        
+
         return passa;
     });
-    
+
     exibirHistorico(dadosFiltrados);
 }
 
@@ -651,13 +651,13 @@ function limparFiltros() {
 // ================= DASHBOARD =================
 function carregarDashboard() {
     const historico = DB.obter('historico');
-    
+
     // Criar filtro de mês se não existir
     criarFiltroMes();
-    
+
     // Atualizar cards
     atualizarCards(historico);
-    
+
     // Criar gráficos
     criarGraficoDia(historico);
     criarGraficoSemana(historico);
@@ -671,10 +671,10 @@ function carregarDashboard() {
 function criarFiltroMes() {
     const filtroExiste = document.getElementById('filtroMes');
     if (filtroExiste) return;
-    
+
     const kpiRow = document.querySelector('.kpi-row');
     if (!kpiRow) return;
-    
+
     const filtroDiv = document.createElement('div');
     filtroDiv.style.marginBottom = '28px';
     filtroDiv.innerHTML = `
@@ -695,7 +695,7 @@ function criarFiltroMes() {
             <option value="11">Dezembro</option>
         </select>
     `;
-    
+
     kpiRow.parentNode.insertBefore(filtroDiv, kpiRow);
 }
 
@@ -703,9 +703,9 @@ function criarFiltroMes() {
 function filtrarPorMes() {
     const mesSelecionado = document.getElementById('filtroMes').value;
     const historico = DB.obter('historico');
-    
+
     let historicoFiltrado;
-    
+
     if (mesSelecionado === '') {
         // Mês atual
         const mesAtual = new Date().getMonth();
@@ -723,21 +723,21 @@ function filtrarPorMes() {
             return data.getMonth() === mes && data.getFullYear() === anoAtual;
         });
     }
-    
+
     atualizarCards(historicoFiltrado);
 }
 
 // ================= CALCULAR MÉDIA DIÁRIA =================
 function calcularMediaDiaria(historico) {
     if (historico.length === 0) return 0;
-    
+
     const diasComRegistro = new Set();
     historico.forEach(item => {
         const data = new Date(item.dataRegistro);
         const dataStr = data.toISOString().split('T')[0];
         diasComRegistro.add(dataStr);
     });
-    
+
     const totalDias = diasComRegistro.size;
     return totalDias > 0 ? (historico.length / totalDias).toFixed(1) : 0;
 }
@@ -745,14 +745,14 @@ function calcularMediaDiaria(historico) {
 // ================= CALCULAR CONTAINER MAIS DEMORADO =================
 function calcularContainerMaisDemorado(historico) {
     if (historico.length === 0) return { container: '-', tempo: '00:00' };
-    
+
     let maisDemorado = historico[0];
     historico.forEach(item => {
         if (item.tempoMinutos && item.tempoMinutos > (maisDemorado.tempoMinutos || 0)) {
             maisDemorado = item;
         }
     });
-    
+
     return {
         container: maisDemorado.container || '-',
         tempo: maisDemorado.tempoFormatado || '00:00'
@@ -762,9 +762,9 @@ function calcularContainerMaisDemorado(historico) {
 // ================= CALCULAR SJ MAIS DEMORADA =================
 function calcularSJMaisDemorada(historico) {
     if (historico.length === 0) return { sj: '-', tempo: '00:00' };
-    
+
     const temposPorSJ = {};
-    
+
     historico.forEach(item => {
         if (item.tempoMinutos) {
             if (!temposPorSJ[item.sj]) {
@@ -773,21 +773,21 @@ function calcularSJMaisDemorada(historico) {
             temposPorSJ[item.sj] += item.tempoMinutos;
         }
     });
-    
+
     let sjMaisDemorada = '-';
     let maiorTempo = 0;
-    
+
     for (let sj in temposPorSJ) {
         if (temposPorSJ[sj] > maiorTempo) {
             maiorTempo = temposPorSJ[sj];
             sjMaisDemorada = sj;
         }
     }
-    
+
     const horas = Math.floor(maiorTempo / 60);
     const minutos = maiorTempo % 60;
     const tempoFormatado = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
-    
+
     return { sj: sjMaisDemorada, tempo: tempoFormatado };
 }
 
@@ -795,10 +795,10 @@ function calcularSJMaisDemorada(historico) {
 function classificarPrevisao(dataPrevisao) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    
+
     const dataPrev = new Date(dataPrevisao);
     dataPrev.setHours(0, 0, 0, 0);
-    
+
     if (dataPrev < hoje) return 'ATRASADO';
     if (dataPrev.getTime() === hoje.getTime()) return 'EM DIA';
     return 'ADIANTADO';
@@ -808,22 +808,22 @@ function classificarPrevisao(dataPrevisao) {
 function carregarPrevisoesHoje() {
     const previsoes = DB.obter('previsoesChegada');
     const hoje = new Date().toISOString().split('T')[0];
-    
+
     const previsoesHoje = previsoes.filter(item => item.dataPrevisao === hoje);
-    
+
     const statusCount = {
         PREVISTO: 0,
         CONFIRMADO: 0,
         ATRASADO: 0,
         CANCELADO: 0
     };
-    
+
     previsoesHoje.forEach(item => {
         if (statusCount[item.status] !== undefined) {
             statusCount[item.status]++;
         }
     });
-    
+
     return {
         total: previsoesHoje.length,
         statusCount: statusCount
@@ -832,36 +832,36 @@ function carregarPrevisoesHoje() {
 function atualizarCards(historico) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    
+
     const inicioSemana = new Date(hoje);
     inicioSemana.setDate(inicioSemana.getDate() - 7);
-    
+
     const inicioMes = new Date(hoje);
     inicioMes.setMonth(inicioMes.getMonth() - 1);
-    
+
     // Total de containers que chegaram (histórico completo)
     const totalChegados = historico.length;
     const elemTotalChegados = document.getElementById('totalChegados');
     if (elemTotalChegados) elemTotalChegados.textContent = totalChegados;
-    
+
     // Containers na semana
     const containersSemana = historico.filter(item => {
         const dataRegistro = new Date(item.dataRegistro);
         return dataRegistro >= inicioSemana;
     }).length;
-    
+
     const elemSemana = document.getElementById('containersSemana');
     if (elemSemana) elemSemana.textContent = containersSemana;
-    
+
     // Containers no mês
     const containersMes = historico.filter(item => {
         const dataRegistro = new Date(item.dataRegistro);
         return dataRegistro >= inicioMes;
     }).length;
-    
+
     const elemMes = document.getElementById('containersMes');
     if (elemMes) elemMes.textContent = containersMes;
-    
+
     // Doca mais movimentada (hoje)
     const docas = {};
     historico.filter(item => {
@@ -871,59 +871,59 @@ function atualizarCards(historico) {
     }).forEach(item => {
         docas[item.doca] = (docas[item.doca] || 0) + 1;
     });
-    
+
     let docaMaisMovimentada = '-';
     let maxMovimentacao = 0;
-    
+
     for (let doca in docas) {
         if (docas[doca] > maxMovimentacao) {
             maxMovimentacao = docas[doca];
             docaMaisMovimentada = `Doca ${doca}`;
         }
     }
-    
+
     const elemDoca = document.getElementById('docaMaisMovimentada');
     if (elemDoca) elemDoca.textContent = docaMaisMovimentada;
-    
+
     // Média diária
     const mediaDiaria = calcularMediaDiaria(historico);
     const elemMedia = document.getElementById('mediaDiaria');
     if (elemMedia) elemMedia.textContent = mediaDiaria;
-    
+
     // Container mais demorado
     const containerMaisDemorado = calcularContainerMaisDemorado(historico);
     const elemContainerDemorado = document.getElementById('containerMaisDemorado');
     if (elemContainerDemorado) {
         elemContainerDemorado.textContent = `${containerMaisDemorado.container} (${containerMaisDemorado.tempo})`;
     }
-    
+
     // SJ mais demorada
     const sjMaisDemorada = calcularSJMaisDemorada(historico);
     const elemSJDemorada = document.getElementById('sjMaisDemorada');
     if (elemSJDemorada) {
         elemSJDemorada.textContent = `${sjMaisDemorada.sj} (${sjMaisDemorada.tempo})`;
     }
-    
+
     // Previsões para hoje
     const previsoesHoje = carregarPrevisoesHoje();
     const elemPrevisoes = document.getElementById('previsoesHoje');
     if (elemPrevisoes) {
         elemPrevisoes.textContent = previsoesHoje.total;
     }
-    
+
     // Containers que chegaram hoje
     const chegadasHoje = contarChegadasHoje();
     const elemChegadas = document.getElementById('chegadasHoje');
     if (elemChegadas) {
         elemChegadas.textContent = chegadasHoje;
     }
-    
+
     // Previsões por classificação
     const classificacao = contarPorClassificacao();
     const elemAtrasados = document.getElementById('totalAtrasados');
     const elemEmDia = document.getElementById('totalEmDia');
     const elemAdiantados = document.getElementById('totalAdiantados');
-    
+
     if (elemAtrasados) elemAtrasados.textContent = classificacao.atrasados;
     if (elemEmDia) elemEmDia.textContent = classificacao.emDia;
     if (elemAdiantados) elemAdiantados.textContent = classificacao.adiantados;
@@ -932,11 +932,11 @@ function atualizarCards(historico) {
 // ================= CONTAR POR CLASSIFICAÇÃO =================
 function contarPorClassificacao() {
     const previsoes = DB.obter('previsoesChegada');
-    
+
     let atrasados = 0;
     let emDia = 0;
     let adiantados = 0;
-    
+
     previsoes.forEach(item => {
         if (item.status !== 'CHEGOU') {
             const classificacao = classificarPrevisao(item.dataPrevisao);
@@ -945,7 +945,7 @@ function contarPorClassificacao() {
             else if (classificacao === 'ADIANTADO') adiantados++;
         }
     });
-    
+
     return { atrasados, emDia, adiantados };
 }
 
@@ -955,7 +955,7 @@ function confirmarExclusao(id) {
         alert('Apenas ADMIN pode excluir registros.');
         return;
     }
-    
+
     const modal = document.getElementById('modalConfirmacao');
     if (modal) {
         modal.style.display = 'flex';
@@ -969,10 +969,10 @@ function excluirRegistro() {
         alert('Apenas ADMIN pode excluir registros.');
         return;
     }
-    
+
     const modal = document.getElementById('modalConfirmacao');
     const id = parseInt(modal.dataset.id, 10);
-    
+
     if (!id) {
         alert('Registro inválido para exclusão.');
         return;
@@ -1000,9 +1000,9 @@ function fecharModalConfirmacao() {
 function contarChegadasHoje() {
     const previsoes = DB.obter('previsoesChegada');
     const hoje = new Date().toISOString().split('T')[0];
-    
-    return previsoes.filter(item => 
-        item.status === 'CHEGOU' && 
+
+    return previsoes.filter(item =>
+        item.status === 'CHEGOU' &&
         item.dataChegada === hoje
     ).length;
 }
@@ -1011,26 +1011,26 @@ function contarChegadasHoje() {
 function criarGraficoDia(historico) {
     const ctx = document.getElementById('chartDia');
     if (!ctx) return;
-    
+
     const labels = [];
     const dados = [];
-    
+
     for (let i = 6; i >= 0; i--) {
         const data = new Date();
         data.setDate(data.getDate() - i);
         data.setHours(0, 0, 0, 0);
-        
+
         labels.push(data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-        
+
         const count = historico.filter(item => {
             const dataRegistro = new Date(item.dataRegistro);
             dataRegistro.setHours(0, 0, 0, 0);
             return dataRegistro.getTime() === data.getTime();
         }).length;
-        
+
         dados.push(count);
     }
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1062,29 +1062,29 @@ function criarGraficoDia(historico) {
 function criarGraficoSemana(historico) {
     const ctx = document.getElementById('chartSemana');
     if (!ctx) return;
-    
+
     const labels = [];
     const dados = [];
-    
+
     for (let i = 3; i >= 0; i--) {
         const dataFim = new Date();
         dataFim.setDate(dataFim.getDate() - (i * 7));
         dataFim.setHours(23, 59, 59, 999);
-        
+
         const dataInicio = new Date(dataFim);
         dataInicio.setDate(dataInicio.getDate() - 6);
         dataInicio.setHours(0, 0, 0, 0);
-        
-        labels.push(`Semana ${4-i}`);
-        
+
+        labels.push(`Semana ${4 - i}`);
+
         const count = historico.filter(item => {
             const dataRegistro = new Date(item.dataRegistro);
             return dataRegistro >= dataInicio && dataRegistro <= dataFim;
         }).length;
-        
+
         dados.push(count);
     }
-    
+
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -1117,27 +1117,27 @@ function criarGraficoSemana(historico) {
 function criarGraficoMes(historico) {
     const ctx = document.getElementById('chartMes');
     if (!ctx) return;
-    
+
     const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const labels = [];
     const dados = [];
-    
+
     for (let i = 5; i >= 0; i--) {
         const data = new Date();
         data.setMonth(data.getMonth() - i);
         const mes = data.getMonth();
         const ano = data.getFullYear();
-        
+
         labels.push(meses[mes]);
-        
+
         const count = historico.filter(item => {
             const dataRegistro = new Date(item.dataRegistro);
             return dataRegistro.getMonth() === mes && dataRegistro.getFullYear() === ano;
         }).length;
-        
+
         dados.push(count);
     }
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1169,13 +1169,13 @@ function criarGraficoMes(historico) {
 function criarGraficoDoca(historico) {
     const ctx = document.getElementById('chartDoca');
     if (!ctx) return;
-    
+
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    
+
     const docas = ['1', '2', '3'];
     const dados = [];
-    
+
     docas.forEach(doca => {
         const count = historico.filter(item => {
             const dataRegistro = new Date(item.dataRegistro);
@@ -1184,7 +1184,7 @@ function criarGraficoDoca(historico) {
         }).length;
         dados.push(count);
     });
-    
+
     new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1211,28 +1211,28 @@ function criarGraficoDoca(historico) {
 function criarGraficoResponsaveis(historico) {
     const ctx = document.getElementById('chartResponsaveis');
     if (!ctx) return;
-    
+
     const mesAtual = new Date().getMonth();
     const anoAtual = new Date().getFullYear();
-    
+
     const historicoMes = historico.filter(item => {
         const data = new Date(item.dataRegistro);
         return data.getMonth() === mesAtual && data.getFullYear() === anoAtual;
     });
-    
+
     const ranking = {};
     historicoMes.forEach(item => {
         const resp = item.responsavel || 'N/A';
         ranking[resp] = (ranking[resp] || 0) + 1;
     });
-    
+
     const ordenado = Object.entries(ranking)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5);
-    
+
     const labels = ordenado.map(item => item[0]);
     const dados = ordenado.map(item => item[1]);
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1265,15 +1265,15 @@ function criarGraficoResponsaveis(historico) {
 function criarGraficoTransportadoras(historico) {
     const ctx = document.getElementById('chartTransportadoras');
     if (!ctx) return;
-    
+
     const mesAtual = new Date().getMonth();
     const anoAtual = new Date().getFullYear();
-    
+
     const historicoMes = historico.filter(item => {
         const data = new Date(item.dataRegistro);
         return data.getMonth() === mesAtual && data.getFullYear() === anoAtual;
     });
-    
+
     const ranking = {};
     historicoMes.forEach(item => {
         const transp = item.transportadora || 'N/A';
@@ -1281,14 +1281,14 @@ function criarGraficoTransportadoras(historico) {
             ranking[transp] = (ranking[transp] || 0) + 1;
         }
     });
-    
+
     const ordenado = Object.entries(ranking)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5);
-    
+
     const labels = ordenado.map(item => item[0]);
     const dados = ordenado.map(item => item[1]);
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1333,7 +1333,7 @@ function abrirModalRelatorio() {
         const mes = String(hojeObj.getMonth() + 1).padStart(2, '0');
         const dia = String(hojeObj.getDate()).padStart(2, '0');
         const dataHojeStr = `${ano}-${mes}-${dia}`;
-        
+
         document.getElementById('relatorioDataInicio').value = dataHojeStr;
         document.getElementById('relatorioDataFim').value = dataHojeStr;
     } else {
@@ -1425,4 +1425,3 @@ function gerarRelatorioPeriodo() {
     `);
     w.document.close();
     fecharModalRelatorio();
-}
