@@ -518,13 +518,6 @@ function salvarContainer(tipo) {
     dados.tempoMinutos = tempo.minutos;
     dados.tempoFormatado = tempo.formatado;
 
-    // Regra de negócio: impede duplicidade de SJ
-    if (validarSJJaCadastrada(dados.sj)) {
-        mensagemErro.textContent = 'Esta SJ já se encontra registada no sistema.';
-        mensagemErro.classList.add('show');
-        return;
-    }
-
     // Persistência: Envia para a API e atualiza o armazenamento local
     if (window.DB && typeof DB.adicionarHistorico === "function") {
         DB.adicionarHistorico(dados)
