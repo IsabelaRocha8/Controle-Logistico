@@ -1,32 +1,23 @@
-document.getElementById("loginForm").addEventListener("submit", function(e){
+document.getElementById("formLogin").addEventListener("submit", async function(e){
 
     e.preventDefault();
 
-    const usuario = document.getElementById("usuario").value.trim().toLowerCase();
-    const senha = document.getElementById("senha").value.trim();
+    const username = document.getElementById("usuario").value.trim();
+    const password = document.getElementById("senha").value.trim();
+    const errorDiv = document.getElementById("mensagemErro");
 
-    const usuarios = {
-        adm: "123",
-        logistica: "123"
-    };
-
-    if(usuarios[usuario] === senha){
-
-        localStorage.setItem("usuarioLogado", usuario);
-
-        if(usuario === "adm"){
-            localStorage.setItem("nivelAcesso","adm");
+    try {
+        const user = await window.Auth.login(username, password);
+        
+        // Redirecionar baseado no perfil
+        if(user.role === "OPERADOR"){
+            window.location.href = "dashboard-operador.html";
+        } else {
+            window.location.href = "index.html";
         }
-
-        if(usuario === "logistica"){
-            localStorage.setItem("nivelAcesso","logistica");
-        }
-
-        /* 🔥 VERIFIQUE O NOME DA SUA PÁGINA AQUI */
-        window.location.href = "dashboard.html";
-
-    } else {
-        document.getElementById("erro").innerHTML = "Usuário ou senha incorretos";
+    } catch (err) {
+        errorDiv.innerHTML = "Usuário ou senha incorretos";
+        console.error("Erro no login:", err);
     }
 
 });

@@ -1425,3 +1425,4 @@ function gerarRelatorioPeriodo() {
     `);
     w.document.close();
     fecharModalRelatorio();
+}
