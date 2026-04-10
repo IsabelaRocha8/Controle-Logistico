@@ -10,7 +10,8 @@ module.exports = async (req, res) => {
   }
 
   const me = await getCurrentUser(req);
-  if (!me || me.role !== "ADMIN") {
+  const meRole = String(me?.role || '').trim().toUpperCase();
+  if (!me || meRole !== "ADMIN") {
     return res.status(403).json({ error: "Acesso restrito a administradores." });
   }
 
@@ -31,7 +32,7 @@ module.exports = async (req, res) => {
         .json({ error: "A nova senha deve conter ao menos 6 caracteres." });
     }
 
-    if (me.role !== "ADMIN" && alvoId !== me.id) {
+    if (meRole !== "ADMIN" && alvoId !== me.id) {
       return res
         .status(403)
         .json({ error: "Sem permissão para alterar senha de outro usuário." });
@@ -43,7 +44,7 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: "Usuário não encontrado." });
       }
 
-      if (me.role !== "ADMIN" || alvoId === me.id) {
+      if (meRole !== "ADMIN" || alvoId === me.id) {
         if (!currentPassword) {
           return res.status(400).json({ error: "Informe sua senha atual." });
         }
@@ -69,8 +70,9 @@ module.exports = async (req, res) => {
 
   if (req.method === "PUT") {
     const { username, password, role, is_active } = req.body ?? {};
+    const normalizedRole = String(role || '').trim().toUpperCase();
 
-    if (!username && !password && !role && typeof is_active === "undefined") {
+    if (!username && !password && !normalizedRole && typeof is_active === "undefined") {
       return res.status(400).json({ error: "Nenhum campo para atualizar." });
     }
 
@@ -79,12 +81,12 @@ module.exports = async (req, res) => {
     if (username) updates.push(sql`username = ${String(username).trim()}`);
     if (typeof is_active !== "undefined") updates.push(sql`is_active = ${is_active}`);
 
-    if (role) {
+    if (normalizedRole) {
       const validRoles = ["ADMIN", "OPERADOR", "IMPORTACAO", "VISUALIZADOR"];
-      if (!validRoles.includes(role)) {
+      if (!validRoles.includes(normalizedRole)) {
         return res.status(400).json({ error: "Role inválida." });
       }
-      updates.push(sql`role = ${role}`);
+      updates.push(sql`role = ${normalizedRole}`);
     }
 
     if (password) {

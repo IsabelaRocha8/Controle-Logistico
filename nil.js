@@ -143,7 +143,7 @@ function preencherTabelaDescarregamento(registros) {
 // ================= CONTROLAR BOTÃO IMPRIMIR =================
 function controlarBotaoImprimir() {
     const btnImprimir = document.querySelector('.btn-primary[onclick="imprimirNIL()"]');
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = String(localStorage.getItem('perfilUsuario') || '').trim().toUpperCase();
     const podeImprimir = ['ADMIN', 'VISUALIZADOR', 'IMPORTACAO'].includes(perfil);
     
     if (!btnImprimir) return;
@@ -275,7 +275,7 @@ function imprimirNIL() {
         ? registrosDescarregamento.map(r => r.container).join(', ')
         : '';
     
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = String(localStorage.getItem('perfilUsuario') || '').trim().toUpperCase();
     if (!['ADMIN', 'VISUALIZADOR', 'IMPORTACAO'].includes(perfil)) {
         alert('Seu perfil não possui permissão para imprimir NIL.');
         return;

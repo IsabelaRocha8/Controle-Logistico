@@ -12,7 +12,7 @@ function salvarSessao(authResponse) {
   // usuarioLogado = username
   // perfilUsuario = role (ADMIN | OPERADOR | IMPORTACAO)
   localStorage.setItem("usuarioLogado", user.username);
-  localStorage.setItem("perfilUsuario", user.role || "OPERADOR");
+  localStorage.setItem("perfilUsuario", String(user.role || "OPERADOR").trim().toUpperCase());
 }
 
 function limparSessao() {

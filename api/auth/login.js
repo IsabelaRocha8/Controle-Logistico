@@ -59,7 +59,7 @@ module.exports = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        role: user.role,
+        role: String(user.role || '').trim().toUpperCase(),
       },
     });
   } catch (err) {

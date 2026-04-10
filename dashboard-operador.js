@@ -33,19 +33,64 @@ function obterPendentesComPrevisao(previsoes) {
         });
 }
 
+// ================= FILTRAR CONTAINER MAIS DEMORADO =================
+function filtrarContainerMaisDemorado(pendentes) {
+    if (pendentes.length === 0) return pendentes;
+    
+    // Encontrar o container mais atrasado (com a data de previsão mais antiga)
+    let maisDemorado = null;
+    let maiorAtraso = -Infinity;
+    let indiceMaisDemorado = -1;
+    
+    pendentes.forEach((item, index) => {
+        const dataPrevisao = item?.dataPrevisao ? new Date(item.dataPrevisao) : new Date();
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        const diasAtraso = Math.floor((hoje - dataPrevisao) / (1000 * 60 * 60 * 24));
+        
+        if (diasAtraso > maiorAtraso) {
+            maiorAtraso = diasAtraso;
+            maisDemorado = item;
+            indiceMaisDemorado = index;
+        }
+    });
+    
+    // Remover o container mais demorado da lista
+    if (indiceMaisDemorado !== -1) {
+        return pendentes.filter((_, index) => index !== indiceMaisDemorado);
+    }
+    
+    return pendentes;
+}
+
 // ================= CARREGAR DASHBOARD OPERADOR =================
 function carregarDashboardOperador() {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const historico = JSON.parse(localStorage.getItem('historico')) || [];
     
     // Calcular KPIs
     let atrasados = 0;
-    let chegados = 0;
+    let chegadosHoje = 0;
     let previstos = 0;
     
+    // Obter data de hoje sem hora
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    // Contar containers que chegaram HOJE
+    historico.forEach(item => {
+        if (item.dataRegistro) {
+            const dataRegistro = new Date(item.dataRegistro);
+            dataRegistro.setHours(0, 0, 0, 0);
+            if (dataRegistro.getTime() === hoje.getTime()) {
+                chegadosHoje++;
+            }
+        }
+    });
+    
     previsoes.forEach(item => {
-        if (item.status === 'CHEGOU') {
-            chegados++;
-        } else {
+        if (item.status !== 'CHEGOU') {
             previstos++;
             const classificacao = classificarPrevisao(item.dataPrevisao);
             if (classificacao === 'ATRASADO') {
@@ -55,12 +100,13 @@ function carregarDashboardOperador() {
     });
     
     document.getElementById('totalAtrasados').textContent = atrasados;
-    document.getElementById('totalChegados').textContent = chegados;
+    document.getElementById('totalChegados').textContent = chegadosHoje;
     document.getElementById('totalPrevistos').textContent = previstos;
     
-    // Exibir containers pendentes com previsão de chegada cadastrada
+    // Exibir containers pendentes com previsão de chegada cadastrada (excluindo o mais demorado)
     const pendentes = obterPendentesComPrevisao(previsoes);
-    exibirContainersPendentes(pendentes);
+    const pendentesSemMaisDemorado = filtrarContainerMaisDemorado(pendentes);
+    exibirContainersPendentes(pendentesSemMaisDemorado);
 }
 
 // ================= EXIBIR CONTAINERS PENDENTES =================

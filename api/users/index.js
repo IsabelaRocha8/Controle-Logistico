@@ -10,7 +10,8 @@ module.exports = async (req, res) => {
   }
 
   const me = await getCurrentUser(req);
-  if (!me || me.role !== "ADMIN") {
+  const meRole = String(me?.role || '').trim().toUpperCase();
+  if (!me || meRole !== "ADMIN") {
     return res.status(403).json({ error: "Acesso restrito a administradores." });
   }
 
@@ -26,15 +27,16 @@ module.exports = async (req, res) => {
 
   if (req.method === "POST") {
     const { username, password, role, is_active } = req.body ?? {};
+    const normalizedRole = String(role || '').trim().toUpperCase();
 
-    if (!username || !password || !role) {
+    if (!username || !password || !normalizedRole) {
       return res
         .status(400)
         .json({ error: "Campos obrigatórios: username, password, role." });
     }
 
     const validRoles = ["ADMIN", "OPERADOR", "IMPORTACAO", "VISUALIZADOR"];
-    if (!validRoles.includes(role)) {
+    if (!validRoles.includes(normalizedRole)) {
       return res.status(400).json({ error: "Role inválida." });
     }
 
@@ -43,7 +45,7 @@ module.exports = async (req, res) => {
 
       const result = await sql`
         INSERT INTO users (username, password_hash, role, is_active)
-        VALUES (${String(username).trim()}, ${hash}, ${role}, ${is_active ?? true})
+        VALUES (${String(username).trim()}, ${hash}, ${normalizedRole}, ${is_active ?? true})
         RETURNING id, username, role, is_active, created_at, updated_at
       `;
 

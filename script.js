@@ -26,9 +26,13 @@ function verificarLogin() {
 
     // Se está logado e está na página de login, redireciona para dashboard
     if (usuarioLogado && paginaAtual === 'login.html') {
-        const perfil = localStorage.getItem('perfilUsuario');
+        const perfil = obterPerfilUsuario();
         if (perfil === 'OPERADOR') {
             window.location.href = 'dashboard-operador.html';
+        } else if (perfil === 'IMPORTACAO') {
+            window.location.href = 'previsao.html';
+        } else if (perfil === 'VISUALIZADOR') {
+            window.location.href = 'nil.html';
         } else {
             window.location.href = 'index.html';
         }
@@ -50,9 +54,14 @@ function verificarLogin() {
     }
 }
 
+// ================= PERFIL USUÁRIO =================
+function obterPerfilUsuario() {
+    return String(localStorage.getItem('perfilUsuario') || '').trim().toUpperCase();
+}
+
 // ================= VERIFICAR PERFIL =================
 function verificarPerfil(paginaAtual) {
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = obterPerfilUsuario();
 
     const paginasOperador = ['dashboard-operador.html', 'cadastro.html', 'cadastro-aereo.html', 'etiquetas.html'];
     const paginasImportacao = ['previsao.html', 'historico.html'];
@@ -88,7 +97,7 @@ function verificarPerfil(paginaAtual) {
 
 // ================= RENDERIZAR MENU LATERAL =================
 function renderizarMenuLateral() {
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = obterPerfilUsuario();
     const sidebarMenu = document.querySelector('.sidebar-menu');
 
     if (!sidebarMenu) return;
@@ -205,7 +214,7 @@ function realizarLogin() {
 
     window.Auth.login(usuario, senha)
         .then((user) => {
-            const perfil = user.role || 'OPERADOR';
+            const perfil = String(user.role || 'OPERADOR').trim().toUpperCase();
 
             if (perfil === 'OPERADOR') {
                 window.location.href = 'dashboard-operador.html';
@@ -245,7 +254,7 @@ function sair() {
 
 // ================= VALIDAR PERMISSÃO ADMIN =================
 function validarPermissaoAdmin() {
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = obterPerfilUsuario();
     return perfil === 'ADMIN';
 }
 

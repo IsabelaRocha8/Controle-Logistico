@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
     return res.json({
       id: user.id,
       username: user.username,
-      role: user.role,
+      role: String(user.role || '').trim().toUpperCase(),
     });
   } catch (err) {
     return res.status(401).json({ error: "Token inválido ou expirado." });

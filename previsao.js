@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ================= REGRAS DE MODAL (AÉREO / MARÍTIMO) =================
 function configurarCampoModal() {
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = String(localStorage.getItem('perfilUsuario') || '').trim().toUpperCase();
     const selectModal = document.getElementById('modalPrevisao');
     const inputContainer = document.getElementById('containerPrevisao');
     const hintContainer = document.getElementById('hintContainer');
@@ -240,7 +240,7 @@ function obterPrevisoesPendentes(previsoes) {
 }
 
 function verificarPermissoesCadastro() {
-    const perfil = localStorage.getItem('perfilUsuario');
+    const perfil = String(localStorage.getItem('perfilUsuario') || '').trim().toUpperCase();
     const form = document.getElementById('formPrevisao');
     if (form) form.style.display = (perfil === 'ADMIN' || perfil === 'IMPORTACAO') ? 'block' : 'none';
 }
