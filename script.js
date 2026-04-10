@@ -578,6 +578,21 @@ function limparFormulario(formId) {
 function carregarHistorico() {
     const historico = DB.obter('historico');
     exibirHistorico(historico);
+    configurarFiltrosHistorico();
+}
+
+function configurarFiltrosHistorico() {
+    const perfil = obterPerfilUsuario();
+    const grupoContainer = document.getElementById('filtroContainerGroup');
+    const grupoSJ = document.getElementById('filtroSJGroup');
+    
+    if (perfil === 'IMPORTACAO') {
+        if (grupoContainer) grupoContainer.style.display = 'none';
+        if (grupoSJ) grupoSJ.style.display = 'block';
+    } else {
+        if (grupoContainer) grupoContainer.style.display = 'block';
+        if (grupoSJ) grupoSJ.style.display = 'none';
+    }
 }
 
 function exibirHistorico(dados) {
@@ -617,12 +632,23 @@ function exibirHistorico(dados) {
 // ================= FILTROS =================
 function aplicarFiltros() {
     const historico = DB.obter('historico');
+    const perfil = obterPerfilUsuario();
 
     const dataInicio = document.getElementById('filtroDataInicio').value;
     const dataFim = document.getElementById('filtroDataFim').value;
     const doca = document.getElementById('filtroDoca').value;
     const cliente = document.getElementById('filtroCliente').value.toLowerCase();
-    const container = document.getElementById('filtroContainerHistorico').value.toUpperCase().trim();
+    const ordenar = document.getElementById('filtroOrdenarHistorico').value;
+    
+    // Usar filtro de Container para ADMIN/outros ou SJ para IMPORTACAO
+    let container = '';
+    let sj = '';
+    
+    if (perfil === 'IMPORTACAO') {
+        sj = document.getElementById('filtroSJHistorico').value.toUpperCase().trim();
+    } else {
+        container = document.getElementById('filtroContainerHistorico').value.toUpperCase().trim();
+    }
 
     let dadosFiltrados = historico.filter(item => {
         let passa = true;
@@ -633,10 +659,23 @@ function aplicarFiltros() {
         if (dataFim && dataRegistro > dataFim) passa = false;
         if (doca && item.doca !== doca) passa = false;
         if (cliente && !item.responsavel.toLowerCase().includes(cliente)) passa = false;
-        if (container && !item.container.includes(container)) passa = false;
+        if (perfil === 'IMPORTACAO') {
+            if (sj && !item.sj.includes(sj)) passa = false;
+        } else {
+            if (container && !item.container.includes(container)) passa = false;
+        }
 
         return passa;
     });
+
+    // Aplicar ordenação crescente se selecionado
+    if (ordenar === 'crescente') {
+        if (perfil === 'IMPORTACAO') {
+            dadosFiltrados.sort((a, b) => a.sj.localeCompare(b.sj));
+        } else {
+            dadosFiltrados.sort((a, b) => a.container.localeCompare(b.container));
+        }
+    }
 
     exibirHistorico(dadosFiltrados);
 }
@@ -647,6 +686,8 @@ function limparFiltros() {
     document.getElementById('filtroDoca').value = '';
     document.getElementById('filtroCliente').value = '';
     document.getElementById('filtroContainerHistorico').value = '';
+    document.getElementById('filtroSJHistorico').value = '';
+    document.getElementById('filtroOrdenarHistorico').value = '';
     carregarHistorico();
 }
 

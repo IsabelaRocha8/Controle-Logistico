@@ -90,9 +90,20 @@
                         <label for="filtroCliente">Responsável</label>
                         <input type="text" id="filtroCliente" placeholder="Digite o responsável">
                     </div>
-                    <div class="filter-group">
+                    <div class="filter-group" id="filtroContainerGroup">
                         <label for="filtroContainerHistorico">Container</label>
                         <input type="text" id="filtroContainerHistorico" placeholder="Buscar container" style="text-transform: uppercase;">
+                    </div>
+                    <div class="filter-group" id="filtroSJGroup" style="display: none;">
+                        <label for="filtroSJHistorico">SJ</label>
+                        <input type="text" id="filtroSJHistorico" placeholder="Buscar SJ" style="text-transform: uppercase;">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filtroOrdenarHistorico">Ordenar</label>
+                        <select id="filtroOrdenarHistorico">
+                            <option value="">Padrão</option>
+                            <option value="crescente">Crescente (SJ/Container)</option>
+                        </select>
                     </div>
                     <div class="filter-group">
                         <button class="btn btn-primary" onclick="aplicarFiltros()">
