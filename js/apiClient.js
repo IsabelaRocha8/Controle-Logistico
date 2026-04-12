@@ -34,6 +34,13 @@ const apiClient = {
       method: "DELETE",
     });
   },
+  updateHistorico(id, payload) {
+    return apiRequest(`/historico?id=${encodeURIComponent(id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  },
   getPrevisoes() {
     return apiRequest("/previsoes");
   },

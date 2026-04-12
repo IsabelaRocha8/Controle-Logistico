@@ -157,14 +157,74 @@
         </div>
     </div>
 
+    <!-- Modal Edição -->
+    <div id="modalEdicao" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Lançamento</h3>
+                <span class="modal-close" onclick="fecharModalEdicao()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formEdicao" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label for="editSJ">SJ</label>
+                        <input type="text" id="editSJ" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editContainer">Container</label>
+                        <input type="text" id="editContainer" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editCTE">CTE</label>
+                        <input type="text" id="editCTE" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editDoca">Doca</label>
+                        <select id="editDoca" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="">Selecione</option>
+                            <option value="1">Doca 1</option>
+                            <option value="2">Doca 2</option>
+                            <option value="3">Doca 3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="editHoraInicio">Hora Início</label>
+                        <input type="time" id="editHoraInicio" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editHoraFinal">Hora Final</label>
+                        <input type="time" id="editHoraFinal" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editResponsavel">Responsável</label>
+                        <input type="text" id="editResponsavel" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editTransportadora">Transportadora</label>
+                        <input type="text" id="editTransportadora" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label for="editModalidade">Modalidade</label>
+                        <input type="text" id="editModalidade" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModalEdicao()">Cancelar</button>
+                <button class="btn" style="background: #00469B; color: white;" onclick="salvarEdicao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/apiClient.js"></script>
     <script src="js/store.js"></script>
     <script src="script.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const isAdmin = validarPermissaoAdmin();
+        const podeEditar = verificarPermissaoEdicao();
         const colunaAcoes = document.getElementById('colunaAcoes');
-        if (isAdmin && colunaAcoes) {
+        if ((isAdmin || podeEditar) && colunaAcoes) {
             colunaAcoes.style.display = '';
         }
     });

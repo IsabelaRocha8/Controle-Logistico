@@ -129,6 +129,53 @@ module.exports = async (req, res) => {
     }
   }
 
-  res.setHeader("Allow", "GET, POST, DELETE");
+  if (req.method === "PUT") {
+    const id = Number(req.query?.id) || Number((req.body && req.body.id) || NaN);
+
+    if (!id || Number.isNaN(id)) {
+      return res.status(400).json({ error: "Parâmetro id obrigatório para PUT" });
+    }
+
+    const {
+      sj,
+      container,
+      cte,
+      doca,
+      horaInicio,
+      horaFinal,
+      responsavel,
+      transportadora,
+      modalidade,
+      dataRegistro,
+      tempoMinutos,
+      tempoFormatado,
+    } = req.body ?? {};
+
+    try {
+      await sql`
+        UPDATE historico
+        SET
+          sj = ${sj ? norm(sj) : null},
+          container = ${container ? norm(container) : null},
+          cte = ${cte ? norm(cte) : null},
+          doca = ${doca ?? null},
+          horaInicio = ${horaInicio ?? null},
+          horaFinal = ${horaFinal ?? null},
+          responsavel = ${responsavel ? norm(responsavel) : null},
+          transportadora = ${transportadora ? norm(transportadora) : null},
+          modalidade = ${modalidade ?? null},
+          dataRegistro = ${dataRegistro ?? null},
+          tempoMinutos = ${Number.isFinite(tempoMinutos) ? tempoMinutos : null},
+          tempoFormatado = ${tempoFormatado ?? null}
+        WHERE id = ${id}
+      `;
+
+      return res.json({ ok: true, id });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  res.setHeader("Allow", "GET, POST, PUT, DELETE");
   return res.status(405).json({ error: "Method not allowed" });
 };

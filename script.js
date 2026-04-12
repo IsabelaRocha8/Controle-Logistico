@@ -583,9 +583,11 @@ function carregarHistorico() {
 function exibirHistorico(dados) {
     const tbody = document.getElementById('tabelaHistorico');
     const isAdmin = validarPermissaoAdmin();
+    const podeEditar = verificarPermissaoEdicao();
+    const mostrarAcoes = isAdmin || podeEditar;
 
     if (dados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${isAdmin ? '11' : '10'}" class="no-data">Nenhum registro encontrado</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${mostrarAcoes ? '11' : '10'}" class="no-data">Nenhum registro encontrado</td></tr>`;
         return;
     }
 
@@ -594,6 +596,16 @@ function exibirHistorico(dados) {
     dados.forEach((item) => {
         const dataRegistro = new Date(item.dataRegistro);
         const dataFormatada = dataRegistro.toLocaleDateString('pt-BR');
+
+        const botoes = [];
+        
+        if (podeEditar && item.id) {
+            botoes.push(`<button class="btn btn-sm" style="background: #00469B; color: white; padding: 6px 12px; margin-right: 4px;" onclick="abrirModalEdicao(${item.id})"><i class="fas fa-edit"></i></button>`);
+        }
+        
+        if (isAdmin && item.id) {
+            botoes.push(`<button class="btn btn-sm" style="background: #dc3545; color: white; padding: 6px 12px;" onclick="confirmarExclusao(${item.id})"><i class="fas fa-trash"></i></button>`);
+        }
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -607,7 +619,7 @@ function exibirHistorico(dados) {
             <td>${item.transportadora || '-'}</td>
             <td>${dataFormatada}</td>
             <td>${item.modalidade}</td>
-            ${isAdmin && item.id ? `<td><button class="btn btn-sm" style="background: #dc3545; color: white; padding: 6px 12px;" onclick="confirmarExclusao(${item.id})"><i class="fas fa-trash"></i></button></td>` : ''}
+            ${mostrarAcoes && item.id ? `<td>${botoes.join('')}</td>` : ''}
         `;
 
         tbody.appendChild(tr);
@@ -1003,6 +1015,99 @@ function fecharModalConfirmacao() {
     if (modal) {
         modal.style.display = 'none';
     }
+}
+
+// ================= VERIFICAR PERMISSÃO EDIÇÃO =================
+function verificarPermissaoEdicao() {
+    const usuarioLogado = localStorage.getItem('usuarioLogado');
+    return usuarioLogado && usuarioLogado.toUpperCase() === 'ISABELAROCHA';
+}
+
+// ================= ABRIR MODAL EDIÇÃO =================
+function abrirModalEdicao(id) {
+    if (!verificarPermissaoEdicao()) {
+        alert('Apenas IsabelaRocha pode editar registros.');
+        return;
+    }
+
+    const historico = DB.obter('historico');
+    const item = historico.find(h => h.id === id);
+
+    if (!item) {
+        alert('Registro não encontrado.');
+        return;
+    }
+
+    // Preencher os campos do formulário
+    document.getElementById('editSJ').value = item.sj || '';
+    document.getElementById('editContainer').value = item.container || '';
+    document.getElementById('editCTE').value = item.cte || '';
+    document.getElementById('editDoca').value = item.doca || '';
+    document.getElementById('editHoraInicio').value = item.horaInicio || '';
+    document.getElementById('editHoraFinal').value = item.horaFinal || '';
+    document.getElementById('editResponsavel').value = item.responsavel || '';
+    document.getElementById('editTransportadora').value = item.transportadora || '';
+    document.getElementById('editModalidade').value = item.modalidade || '';
+
+    // Abrir modal
+    const modal = document.getElementById('modalEdicao');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.dataset.id = id;
+    }
+}
+
+// ================= FECHAR MODAL EDIÇÃO =================
+function fecharModalEdicao() {
+    const modal = document.getElementById('modalEdicao');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// ================= SALVAR EDIÇÃO =================
+function salvarEdicao() {
+    if (!verificarPermissaoEdicao()) {
+        alert('Apenas IsabelaRocha pode editar registros.');
+        return;
+    }
+
+    const modal = document.getElementById('modalEdicao');
+    const id = parseInt(modal.dataset.id, 10);
+
+    if (!id) {
+        alert('Registro inválido para edição.');
+        return;
+    }
+
+    const dados = {
+        sj: document.getElementById('editSJ').value.toUpperCase().trim(),
+        container: document.getElementById('editContainer').value.toUpperCase().trim(),
+        cte: document.getElementById('editCTE').value.toUpperCase().trim(),
+        doca: document.getElementById('editDoca').value,
+        horaInicio: document.getElementById('editHoraInicio').value,
+        horaFinal: document.getElementById('editHoraFinal').value,
+        responsavel: document.getElementById('editResponsavel').value.toUpperCase().trim(),
+        transportadora: document.getElementById('editTransportadora').value.toUpperCase().trim(),
+        modalidade: document.getElementById('editModalidade').value
+    };
+
+    // Validar campos obrigatórios
+    if (!dados.sj || !dados.container || !dados.cte || !dados.doca) {
+        alert('Campos obrigatórios: SJ, Container, CTE e Doca!');
+        return;
+    }
+
+    DB.atualizarHistorico(id, dados)
+        .then(() => {
+            fecharModalEdicao();
+            carregarHistorico();
+            alert('Registro atualizado com sucesso!');
+        })
+        .catch((err) => {
+            console.error('Erro ao atualizar:', err);
+            alert('Erro ao atualizar registro: ' + (err.message || 'Tente novamente'));
+        });
 }
 
 // ================= CONTAR CHEGADAS HOJE =================
