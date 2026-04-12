@@ -1598,6 +1598,27 @@ function gerarRelatorioPeriodo() {
         return dataLocal >= dataInicio && dataLocal <= dataFim;
     });
 
+    // Agrupar containers por data de registro
+    const containersPorDia = {};
+    chegadasPeriodo.forEach(item => {
+        const dataLocal = obterDataLocalISO(item.dataRegistro);
+        if (!containersPorDia[dataLocal]) {
+            containersPorDia[dataLocal] = 0;
+        }
+        containersPorDia[dataLocal]++;
+    });
+
+    // Ordenar as datas
+    const datas = Object.keys(containersPorDia).sort();
+    const totalContainers = chegadasPeriodo.length;
+
+    // Formatar tabela de resumo por dia
+    const tabelaResumo = datas.map(data => {
+        const dataFmt = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR');
+        const quantidade = containersPorDia[data];
+        return `<tr><td style="font-weight: bold;">${dataFmt}</td><td style="text-align: center; font-weight: bold;">${quantidade}</td></tr>`;
+    }).join('');
+
     // Formata as datas para o título ficar bonito no PDF
     const dataInicioFmt = new Date(dataInicio + 'T12:00:00').toLocaleDateString('pt-BR');
     const dataFimFmt = new Date(dataFim + 'T12:00:00').toLocaleDateString('pt-BR');
@@ -1605,19 +1626,43 @@ function gerarRelatorioPeriodo() {
 
     const w = window.open('', '_blank');
     w.document.write(`
-        <html><head><title>Relatório NIL - ${tituloPeriodo}</title>
+        <html><head><title>Relatório Logístico - ${tituloPeriodo}</title>
         <style>
             body { font-family: Arial, sans-serif; margin: 20px; color: #222; }
             h1, h2 { color: #00469B; }
+            h3 { color: #666; font-size: 14px; margin-top: 25px; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
             th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
-            th { background: #f4f7fb; }
+            th { background: #f4f7fb; color: #00469B; font-weight: bold; }
+            .resumo-table { width: 50%; }
+            .resumo-table th { background: #e8f0fa; }
+            .total-row { background: #f0f8ff; font-weight: bold; }
+            .total-row td { border-top: 2px solid #00469B; padding: 12px 8px; }
         </style></head><body>
         <h1>Relatório Logístico (${tituloPeriodo})</h1>
-        <h2>Containers que chegaram no período</h2>
+        
+        <h2>Resumo de Containers por Data</h2>
+        <table class="resumo-table">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Data</th>
+                    <th style="text-align: center;">Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tabelaResumo}
+                <tr class="total-row">
+                    <td>TOTAL</td>
+                    <td style="text-align: center;">${totalContainers}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Detalhamento de Containers</h2>
         <table><thead><tr><th>Data</th><th>SJ</th><th>Container</th><th>CTE</th><th>Doca</th><th>Responsável</th><th>Hora Início</th><th>Hora Final</th></tr></thead><tbody>
         ${chegadasPeriodo.map(r => `<tr><td>${new Date(r.dataRegistro).toLocaleDateString('pt-BR')}</td><td>${r.sj}</td><td>${r.container}</td><td>${r.cte}</td><td>${r.doca}</td><td>${r.responsavel || '-'}</td><td>${r.horaInicio || '-'}</td><td>${r.horaFinal || '-'}</td></tr>`).join('') || '<tr><td colspan="8">Sem registros de chegada no período.</td></tr>'}
         </tbody></table>
+        
         <h2>Histórico/Previsões no período</h2>
         <table><thead><tr><th>Status</th><th>SJ</th><th>Container</th><th>Modal</th><th>Data</th><th>Hora</th></tr></thead><tbody>
         ${previsoesPeriodo.map(p => `<tr><td>${p.status || '-'}</td><td>${p.sj}</td><td>${p.container}</td><td>${p.modalImportacao || '-'}</td><td>${obterDataLocalISO(p.dataRegistro || p.dataChegada || p.dataPrevisao).split('-').reverse().join('/')}</td><td>${p.horaRegistro || '-'}</td></tr>`).join('') || '<tr><td colspan="6">Sem previsões/histórico no período.</td></tr>'}
