@@ -471,6 +471,17 @@ function salvarContainer(tipo) {
 
     // Define os elementos de mensagem e captura os dados com base no formulário de origem
     if (tipo === 'maritimo') {
+        // Obter data do formulário ou usar data atual
+        const dataInputMaritima = document.getElementById('dataRegistro').value;
+        let dataRegistroMaritima;
+        if (dataInputMaritima) {
+            // Converter data do input em ISO string (considerando fuso horário local)
+            dataRegistroMaritima = new Date(dataInputMaritima + 'T00:00:00').toISOString();
+        } else {
+            // Usar data/hora atual se não fornecida
+            dataRegistroMaritima = new Date().toISOString();
+        }
+        
         dados = {
             sj: formatarMaiusculo(document.getElementById('sj').value),
             container: formatarMaiusculo(document.getElementById('container').value),
@@ -480,12 +491,23 @@ function salvarContainer(tipo) {
             horaFinal: document.getElementById('horaFinal').value,
             responsavel: formatarMaiusculo(document.getElementById('responsavel').value),
             modalidade: 'Marítimo', // Identificador para o histórico
-            dataRegistro: new Date().toISOString()
+            dataRegistro: dataRegistroMaritima
         };
         mensagemErro = document.getElementById('mensagemErro');
         mensagemSucesso = document.getElementById('mensagemSucesso');
     } else {
         // Lógica específica para o Cadastro Aéreo
+        // Obter data do formulário ou usar data atual
+        const dataInputAereo = document.getElementById('dataRegistroAereo').value;
+        let dataRegistroAereo;
+        if (dataInputAereo) {
+            // Converter data do input em ISO string (considerando fuso horário local)
+            dataRegistroAereo = new Date(dataInputAereo + 'T00:00:00').toISOString();
+        } else {
+            // Usar data/hora atual se não fornecida
+            dataRegistroAereo = new Date().toISOString();
+        }
+        
         dados = {
             sj: formatarMaiusculo(document.getElementById('sjAereo').value),
             container: formatarMaiusculo(document.getElementById('containerAereo').value),
@@ -495,7 +517,7 @@ function salvarContainer(tipo) {
             horaFinal: document.getElementById('horaFinalAereo').value,
             responsavel: formatarMaiusculo(document.getElementById('responsavelAereo').value),
             modalidade: 'Aéreo', // Identificador para o histórico
-            dataRegistro: new Date().toISOString()
+            dataRegistro: dataRegistroAereo
         };
         mensagemErro = document.getElementById('mensagemErroAereo');
         mensagemSucesso = document.getElementById('mensagemSucessoAereo');
@@ -1048,6 +1070,15 @@ function abrirModalEdicao(id) {
     document.getElementById('editResponsavel').value = item.responsavel || '';
     document.getElementById('editTransportadora').value = item.transportadora || '';
     document.getElementById('editModalidade').value = item.modalidade || '';
+    
+    // Preencher data do registro
+    if (item.dataRegistro) {
+        const dataObj = new Date(item.dataRegistro);
+        const dataFormatada = dataObj.toISOString().split('T')[0];
+        document.getElementById('editDataRegistro').value = dataFormatada;
+    } else {
+        document.getElementById('editDataRegistro').value = '';
+    }
 
     // Abrir modal
     const modal = document.getElementById('modalEdicao');
@@ -1080,6 +1111,19 @@ function salvarEdicao() {
         return;
     }
 
+    // Obter data do formulário ou usar data atual do registro
+    const dataInputEdicao = document.getElementById('editDataRegistro').value;
+    let dataRegistroEdicao;
+    if (dataInputEdicao) {
+        // Converter data do input em ISO string
+        dataRegistroEdicao = new Date(dataInputEdicao + 'T00:00:00').toISOString();
+    } else {
+        // Manter data original se não alterada
+        const historico = DB.obter('historico');
+        const itemOriginal = historico.find(h => h.id === id);
+        dataRegistroEdicao = itemOriginal?.dataRegistro || new Date().toISOString();
+    }
+    
     const dados = {
         sj: document.getElementById('editSJ').value.toUpperCase().trim(),
         container: document.getElementById('editContainer').value.toUpperCase().trim(),
@@ -1089,7 +1133,8 @@ function salvarEdicao() {
         horaFinal: document.getElementById('editHoraFinal').value,
         responsavel: document.getElementById('editResponsavel').value.toUpperCase().trim(),
         transportadora: document.getElementById('editTransportadora').value.toUpperCase().trim(),
-        modalidade: document.getElementById('editModalidade').value
+        modalidade: document.getElementById('editModalidade').value,
+        dataRegistro: dataRegistroEdicao
     };
 
     // Validar campos obrigatórios
