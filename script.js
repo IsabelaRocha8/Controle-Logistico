@@ -382,13 +382,23 @@ function validarCampos(dados) {
         return { valido: false, mensagem: 'Container fora do padrão ISO (AAAA9999999).' };
     }
 
+    // Verificar container duplicado no histórico
+    if (validarContainerDuplicado(dados.container)) {
+        return { valido: false, mensagem: 'Container já existe no histórico. Duplicados não são permitidos.' };
+    }
+
     return { valido: true };
 }
 
 // ================= VALIDAR CONTAINER DUPLICADO =================
-function validarContainerDuplicado(container) {
-    const historico = DB.obter('historico') || [];
-    return historico.some(item => item.container === container);
+function validarContainerDuplicado(container, idExcluir = null) {
+    const historico = window.DB?.obter('historico') || [];
+    const containerNorm = formatarMaiusculo(container);
+    return historico.some(item => {
+        if (!item || !item.container) return false;
+        if (idExcluir && item.id === idExcluir) return false;
+        return formatarMaiusculo(item.container) === containerNorm;
+    });
 }
 
 // ================= VALIDAR CONTAINER NA MESMA SJ =================
@@ -587,7 +597,10 @@ function salvarContainer(tipo) {
             })
             .catch((err) => {
                 console.error("Erro ao salvar:", err);
-                mensagemErro.textContent = 'Erro ao guardar no servidor. Tente novamente.';
+                const mensagem = err?.message || '';
+                mensagemErro.textContent = mensagem.includes('Container já registrado') || mensagem.includes('Container já existe')
+                    ? mensagem
+                    : 'Erro ao guardar no servidor. Tente novamente.';
                 mensagemErro.classList.add('show');
             });
     } else {
@@ -1160,6 +1173,12 @@ function salvarEdicao() {
     // Validar campos obrigatórios
     if (!dados.sj || !dados.container || !dados.cte || !dados.doca) {
         alert('Campos obrigatórios: SJ, Container, CTE e Doca!');
+        return;
+    }
+
+    // Validar container duplicado em outro registro
+    if (validarContainerDuplicado(dados.container, id)) {
+        alert('Container já existe em outro registro. Não é permitido duplicar containers.');
         return;
     }
 

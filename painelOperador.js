@@ -222,6 +222,11 @@ async function registrarChegada(dados) {
 
         try {
             if (window.DB) {
+                if (typeof validarContainerDuplicado === 'function' && validarContainerDuplicado(registroHistorico.container)) {
+                    alert('Container já existe no histórico. Não é permitido registrar containers duplicados.');
+                    return;
+                }
+
                 // Envia para o histórico
                 await window.DB.adicionarHistorico(registroHistorico);
                 

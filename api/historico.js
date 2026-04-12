@@ -61,31 +61,14 @@ module.exports = async (req, res) => {
 
     try {
       const existentes = await sql`
-        SELECT id, sj, container
+        SELECT id
         FROM historico
         WHERE container = ${containerNorm}
       `;
 
-      const tipoAtual = obterTipoSJ(sjNorm);
-      const conflito = existentes.find((row) => {
-        const sjExistente = norm(row.sj);
-        const tipoExistente = obterTipoSJ(sjExistente);
-
-        const ambosSJZJ =
-          (tipoAtual === "SJ" || tipoAtual === "ZJ") &&
-          (tipoExistente === "SJ" || tipoExistente === "ZJ");
-
-        if (ambosSJZJ) {
-          return sjExistente === sjNorm;
-        }
-
-        return true;
-      });
-
-      if (conflito) {
+      if (existentes.length > 0) {
         return res.status(409).json({
-          error:
-            "Container já registrado. Registros duplicados não são permitidos para esta combinação de lote/origem.",
+          error: "Container já registrado. Registros duplicados não são permitidos.",
         });
       }
 
@@ -151,7 +134,23 @@ module.exports = async (req, res) => {
       tempoFormatado,
     } = req.body ?? {};
 
+    const containerNorm = container ? norm(container) : null;
+
     try {
+      if (containerNorm) {
+        const existentes = await sql`
+          SELECT id
+          FROM historico
+          WHERE container = ${containerNorm} AND id != ${id}
+        `;
+
+        if (existentes.length > 0) {
+          return res.status(409).json({
+            error: "Container já registrado. Registros duplicados não são permitidos.",
+          });
+        }
+      }
+
       await sql`
         UPDATE historico
         SET

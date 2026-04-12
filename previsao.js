@@ -351,6 +351,14 @@ async function confirmarChegada() {
     };
 
     try {
+        if (typeof validarContainerDuplicado === 'function' && validarContainerDuplicado(payloadChegada.container)) {
+            const mensagem = 'Container já existe no histórico. Não é permitido registrar containers duplicados.';
+            mensagemErro.textContent = mensagem;
+            mensagemErro.classList.add('show');
+            exibirModalFeedbackChegada('erro', mensagem);
+            return;
+        }
+
         if (window.DB?.registrarChegada) {
             await window.DB.registrarChegada(payloadChegada);
         } else if (window.DB?.adicionarHistorico) {
