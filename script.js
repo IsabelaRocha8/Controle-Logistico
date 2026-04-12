@@ -730,7 +730,10 @@ function carregarDashboard() {
     // Criar filtro de mês se não existir
     criarFiltroMes();
 
-    // Atualizar cards
+    renderizarDashboard(historico);
+}
+
+function renderizarDashboard(historico) {
     atualizarCards(historico);
 
     // Destruir gráficos antigos e criar novos
@@ -792,7 +795,7 @@ function filtrarPorMes() {
         });
     } else {
         // Mês selecionado
-        const mes = parseInt(mesSelecionado);
+        const mes = parseInt(mesSelecionado, 10);
         const anoAtual = new Date().getFullYear();
         historicoFiltrado = historico.filter(item => {
             const data = new Date(item.dataRegistro);
@@ -800,7 +803,7 @@ function filtrarPorMes() {
         });
     }
 
-    atualizarCards(historicoFiltrado);
+    renderizarDashboard(historicoFiltrado);
 }
 
 // ================= CALCULAR MÉDIA DIÁRIA =================
