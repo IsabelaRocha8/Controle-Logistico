@@ -1199,13 +1199,16 @@ function salvarEdicao() {
 
 // ================= CONTAR CHEGADAS HOJE =================
 function contarChegadasHoje() {
-    const previsoes = DB.obter('previsoesChegada');
-    const hoje = new Date().toISOString().split('T')[0];
+    const historico = DB.obter('historico') || [];
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
 
-    return previsoes.filter(item =>
-        item.status === 'CHEGOU' &&
-        item.dataChegada === hoje
-    ).length;
+    return historico.filter(item => {
+        if (!item.dataRegistro) return false;
+        const dataRegistro = new Date(item.dataRegistro);
+        dataRegistro.setHours(0, 0, 0, 0);
+        return dataRegistro.getTime() === hoje.getTime();
+    }).length;
 }
 
 // ================= GRÁFICO POR DIA =================
