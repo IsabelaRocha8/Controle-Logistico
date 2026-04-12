@@ -1,3 +1,22 @@
+// ================= VARIÁVEIS GLOBAIS PARA GRÁFICOS =================
+let chartsInstances = {
+    chartDia: null,
+    chartSemana: null,
+    chartMes: null,
+    chartDoca: null,
+    chartResponsaveis: null,
+    chartTransportadoras: null
+};
+
+function destruirGraficosAntigos() {
+    Object.keys(chartsInstances).forEach(key => {
+        if (chartsInstances[key]) {
+            chartsInstances[key].destroy();
+            chartsInstances[key] = null;
+        }
+    });
+}
+
 // ================= INICIALIZAÇÃO =================
 document.addEventListener("DOMContentLoaded", async function () {
     verificarLogin();
@@ -701,7 +720,8 @@ function carregarDashboard() {
     // Atualizar cards
     atualizarCards(historico);
 
-    // Criar gráficos
+    // Destruir gráficos antigos e criar novos
+    destruirGraficosAntigos();
     criarGraficoDia(historico);
     criarGraficoSemana(historico);
     criarGraficoMes(historico);
@@ -1190,7 +1210,7 @@ function criarGraficoDia(historico) {
         dados.push(count);
     }
 
-    new Chart(ctx, {
+    chartsInstances.chartDia = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -1244,7 +1264,7 @@ function criarGraficoSemana(historico) {
         dados.push(count);
     }
 
-    new Chart(ctx, {
+    chartsInstances.chartSemana = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -1272,7 +1292,7 @@ function criarGraficoSemana(historico) {
     });
 }
 
-// ================= GRÁFICO POR MÊS =================
+// ================= GRAFICO POR MES =================
 function criarGraficoMes(historico) {
     const ctx = document.getElementById('chartMes');
     if (!ctx) return;
@@ -1297,7 +1317,7 @@ function criarGraficoMes(historico) {
         dados.push(count);
     }
 
-    new Chart(ctx, {
+    chartsInstances.chartMes = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -1344,7 +1364,7 @@ function criarGraficoDoca(historico) {
         dados.push(count);
     });
 
-    new Chart(ctx, {
+    chartsInstances.chartDoca = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Doca 1', 'Doca 2', 'Doca 3'],
@@ -1392,7 +1412,7 @@ function criarGraficoResponsaveis(historico) {
     const labels = ordenado.map(item => item[0]);
     const dados = ordenado.map(item => item[1]);
 
-    new Chart(ctx, {
+    chartsInstances.chartResponsaveis = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -1448,7 +1468,7 @@ function criarGraficoTransportadoras(historico) {
     const labels = ordenado.map(item => item[0]);
     const dados = ordenado.map(item => item[1]);
 
-    new Chart(ctx, {
+    chartsInstances.chartTransportadoras = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
