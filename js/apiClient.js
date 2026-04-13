@@ -1,6 +1,7 @@
 const API_BASE = "/api";
 
 async function apiRequest(path, options) {
+  console.log(`[apiRequest] ${options?.method || 'GET'} ${path}`);
   const res = await fetch(`${API_BASE}${path}`, options);
   const text = await res.text();
 
@@ -12,9 +13,12 @@ async function apiRequest(path, options) {
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || `HTTP ${res.status} em ${path}`);
+    const error = data?.error || `HTTP ${res.status} em ${path}`;
+    console.error(`[apiRequest] ERRO: ${error}`);
+    throw new Error(error);
   }
 
+  console.log(`[apiRequest] ✓ ${path} - Status ${res.status}`);
   return data;
 }
 

@@ -391,7 +391,7 @@ async function confirmarChegada() {
             throw new Error('Serviço de registro de chegada indisponível.');
         }
 
-        await window.DB.registrarChegada({
+        const payload = {
             sj: (item.sj || '').toString().trim().toUpperCase(),
             container: (item.container || '').toString().trim().toUpperCase(),
             cte,
@@ -404,14 +404,26 @@ async function confirmarChegada() {
             dataRegistro: agora.toISOString(),
             tempoMinutos: calcularTempoMinutos(horaInicio, horaFinal),
             tempoFormatado: calcularTempoFormatado(horaInicio, horaFinal)
-        });
+        };
+        
+        console.log('[confirmarChegada] Registrando:', payload.sj, payload.container);
+        await window.DB.registrarChegada(payload);
+        console.log('[confirmarChegada] Sucesso na API - Atualizando localStorage...');
 
         fecharModalChegada();
 
-        // Recarregar dados para garantir sincronia com banco/histórico
-        if (window.DB && window.DB.init) {
-            await window.DB.init();
+        // Garantir que a previsão foi atualizada para CHEGOU no localStorage
+        const previsoesCurrent = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+        const idx = previsoesCurrent.findIndex(p => 
+            (p.sj || '').toString().trim().toUpperCase() === payload.sj &&
+            (p.container || '').toString().trim().toUpperCase() === payload.container
+        );
+        if (idx !== -1) {
+            previsoesCurrent[idx].status = 'CHEGOU';
+            localStorage.setItem('previsoesChegada', JSON.stringify(previsoesCurrent));
+            console.log('[confirmarChegada] Status local atualizado para CHEGOU');
         }
+        
         carregarDashboardOperador();
 
     } catch (error) {

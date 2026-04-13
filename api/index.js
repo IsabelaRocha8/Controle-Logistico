@@ -165,6 +165,9 @@ app.post("/api/previsoes", async (req, res) => {
 
 
 app.post("/api/registrar-chegada", async (req, res) => {
+  console.log("[registrar-chegada] Requisição recebida");
+  console.log("[registrar-chegada] Body:", JSON.stringify(req.body).substring(0, 200));
+  
   try {
     await garantirTabelas();
 
@@ -190,6 +193,7 @@ app.post("/api/registrar-chegada", async (req, res) => {
     const cteNorm = norm(cte);
 
     if (!sjNorm || !containerNorm || !cteNorm || !doca || !horaInicio || !horaFinal || !norm(responsavel)) {
+      console.log("[registrar-chegada] Campos obrigatórios faltando");
       return res.status(400).json({
         error:
           "Campos obrigatórios: sj, container, cte, doca, horaInicio, horaFinal, responsavel",
@@ -205,10 +209,12 @@ app.post("/api/registrar-chegada", async (req, res) => {
     `;
 
     if (!previsao.length) {
+      console.log("[registrar-chegada] Previsão não encontrada para SJ:", sjNorm, "Container:", containerNorm);
       return res.status(404).json({ error: "Previsão não encontrada para este SJ/container." });
     }
 
     if (norm(previsao[0].status) === "CHEGOU") {
+      console.log("[registrar-chegada] Container já foi registrado");
       return res.status(409).json({ error: "A chegada deste container já foi registrada." });
     }
 
@@ -220,17 +226,21 @@ app.post("/api/registrar-chegada", async (req, res) => {
     `;
 
     if (historicoExistente.length) {
+      console.log("[registrar-chegada] Histórico já existe");
       return res.status(409).json({ error: "Container já registrado no histórico para este lote." });
     }
 
     const hoje = new Date().toISOString().split("T")[0];
 
+    console.log("[registrar-chegada] Atualizando status da previsão para CHEGOU...");
     await sql`
       UPDATE previsoesChegada
       SET status = 'CHEGOU', dataChegada = ${hoje}
       WHERE id = ${previsao[0].id}
     `;
+    console.log("[registrar-chegada] Status atualizado com sucesso");
 
+    console.log("[registrar-chegada] Inserindo no histórico...");
     const historico = await sql`
       INSERT INTO historico (
         sj, container, cte, doca,
@@ -247,6 +257,7 @@ app.post("/api/registrar-chegada", async (req, res) => {
       )
       RETURNING id
     `;
+    console.log("[registrar-chegada] Histórico inserido, ID:", historico[0].id);
 
     res.status(201).json({
       ok: true,
@@ -256,6 +267,7 @@ app.post("/api/registrar-chegada", async (req, res) => {
       dataChegada: hoje,
     });
   } catch (err) {
+    console.error("[registrar-chegada] ERRO:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

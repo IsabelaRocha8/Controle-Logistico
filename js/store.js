@@ -54,19 +54,31 @@ async function syncToLocal(fetchFn, storageKey) {
 
 const DB = {
   async init() {
-    if (!window.apiClient) return;
+    if (!window.apiClient) {
+      console.error('[DB.init] apiClient não disponível');
+      return;
+    }
 
     try {
       await syncToLocal(window.apiClient.getHistorico, "historico");
-    } catch {}
+      console.log('[DB.init] Histórico sincronizado com sucesso');
+    } catch (err) {
+      console.error('[DB.init] Erro ao sincronizar histórico:', err.message);
+    }
 
     try {
       await syncToLocal(window.apiClient.getPrevisoes, "previsoesChegada");
-    } catch {}
+      console.log('[DB.init] Previsões sincronizadas com sucesso');
+    } catch (err) {
+      console.error('[DB.init] Erro ao sincronizar previsões:', err.message);
+    }
 
     try {
       await syncToLocal(window.apiClient.getNils, "nilsGerados");
-    } catch {}
+      console.log('[DB.init] NILs sincronizados com sucesso');
+    } catch (err) {
+      console.error('[DB.init] Erro ao sincronizar NILs:', err.message);
+    }
   },
 
   obter(key) {
@@ -125,9 +137,20 @@ const DB = {
       throw new Error("API client não disponível");
     }
 
+    console.log('[DB.registrarChegada] Iniciando...');
     const response = await window.apiClient.registrarChegada(dados);
+    console.log('[DB.registrarChegada] Resposta da API:', response);
+    
+    console.log('[DB.registrarChegada] Sincronizando previsões...');
     await syncToLocal(window.apiClient.getPrevisoes, "previsoesChegada");
+    const previsoesAtualizadas = readLocal("previsoesChegada", []);
+    console.log('[DB.registrarChegada] Previsões após sincronização:', previsoesAtualizadas.length, 'itens');
+    
+    console.log('[DB.registrarChegada] Sincronizando histórico...');
     await syncToLocal(window.apiClient.getHistorico, "historico");
+    const historicoAtualizado = readLocal("historico", []);
+    console.log('[DB.registrarChegada] Histórico após sincronização:', historicoAtualizado.length, 'itens');
+    
     return response;
   },
   async adicionarNil(dados) {

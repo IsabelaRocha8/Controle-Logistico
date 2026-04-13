@@ -361,13 +361,17 @@ async function confirmarChegada() {
     };
 
     try {
+        console.log('[confirmarChegada] Registrando:', payloadChegada.sj, payloadChegada.container);
+        
         if (window.DB?.registrarChegada) {
             await window.DB.registrarChegada(payloadChegada);
+            console.log('[confirmarChegada] Sucesso - Atualizado via registrarChegada');
         } else if (window.DB?.adicionarHistorico) {
             await window.DB.adicionarHistorico(payloadChegada);
             const hoje = agora.toISOString().split('T')[0];
             previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
             localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+            console.log('[confirmarChegada] Sucesso - Atualizado via adicionarHistorico');
         } else {
             throw new Error('Integração de API indisponível.');
         }
