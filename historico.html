@@ -154,7 +154,20 @@
     <script src="js/store.js"></script>
     <script src="script.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Sincronizar dados do servidor antes de exibir histórico
+        if (window.apiClient) {
+            try {
+                const historico = await window.apiClient.getHistorico();
+                if (Array.isArray(historico)) {
+                    localStorage.setItem('historico', JSON.stringify(historico));
+                    console.log('Histórico sincronizado:', historico.length, 'registros');
+                }
+            } catch (err) {
+                console.error('Erro ao sincronizar histórico:', err);
+            }
+        }
+        
         const isAdmin = validarPermissaoAdmin();
         const colunaAcoes = document.getElementById('colunaAcoes');
         if (isAdmin && colunaAcoes) {

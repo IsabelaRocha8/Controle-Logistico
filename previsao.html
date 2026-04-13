@@ -199,5 +199,19 @@
     </div>
 
     <script src="previsao.js"></script>
-</body>
-</html>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Sincronizar dados do servidor antes de exibir previsões
+        if (window.apiClient) {
+            try {
+                const previsoes = await window.apiClient.getPrevisoes();
+                if (Array.isArray(previsoes)) {
+                    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+                    console.log('Previsões sincronizadas:', previsoes.length, 'registros');
+                }
+            } catch (err) {
+                console.error('Erro ao sincronizar previsões:', err);
+            }
+        }
+    });
+    </script>

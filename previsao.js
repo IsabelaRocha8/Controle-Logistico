@@ -277,6 +277,8 @@ function fecharModalChegada() {
     previsaoSelecionada = null;
 }
 
+let feedbackChegadaSucesso = false;
+
 function exibirModalFeedbackChegada(tipo, mensagem) {
     const modal = document.getElementById('modalFeedbackChegada');
     const titulo = document.getElementById('feedbackChegadaTitulo');
@@ -289,6 +291,7 @@ function exibirModalFeedbackChegada(tipo, mensagem) {
     }
 
     const isSucesso = tipo === 'sucesso';
+    feedbackChegadaSucesso = isSucesso;
     titulo.textContent = isSucesso ? 'Chegada registrada com sucesso!' : 'Falha ao registrar chegada';
     texto.textContent = mensagem;
     content.classList.toggle('feedback-success', isSucesso);
@@ -299,6 +302,13 @@ function exibirModalFeedbackChegada(tipo, mensagem) {
 function fecharModalFeedbackChegada() {
     const modal = document.getElementById('modalFeedbackChegada');
     if (modal) modal.style.display = 'none';
+    
+    // Redirecionar para histórico se foi sucesso
+    if (feedbackChegadaSucesso) {
+        setTimeout(() => {
+            window.location.href = 'historico.html';
+        }, 300);
+    }
 }
 
 async function confirmarChegada() {

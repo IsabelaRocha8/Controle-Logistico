@@ -179,5 +179,21 @@
     <!-- <script src="storage.js"></script> -->
     <script src="script.js"></script>
     <script src="dashboard-operador.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Sincronizar dados do servidor antes de exibir dashboard
+        if (window.apiClient) {
+            try {
+                const previsoes = await window.apiClient.getPrevisoes();
+                if (Array.isArray(previsoes)) {
+                    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+                    console.log('Previsões sincronizadas:', previsoes.length, 'registros');
+                }
+            } catch (err) {
+                console.error('Erro ao sincronizar previsões:', err);
+            }
+        }
+    });
+    </script>
 </body>
 </html>

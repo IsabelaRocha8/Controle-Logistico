@@ -8,7 +8,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (!usuarioLogado && paginaAtual !== "login.html") return;
 
   if (window.DB?.init) {
-    await window.DB.init();
+    try {
+      await window.DB.init();
+    } catch (err) {
+      console.error("Erro ao sincronizar dados:", err);
+    }
   }
 
   inicializarPagina();
