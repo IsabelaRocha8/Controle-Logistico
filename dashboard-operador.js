@@ -407,21 +407,47 @@ async function confirmarChegada() {
         };
         
         console.log('[confirmarChegada] Registrando:', payload.sj, payload.container);
-        await window.DB.registrarChegada(payload);
-        console.log('[confirmarChegada] Sucesso na API - Atualizando localStorage...');
+        const apiResponse = await window.DB.registrarChegada(payload);
+        console.log('[confirmarChegada] Sucesso na API - Resposta:', apiResponse);
+        console.log('[confirmarChegada] Sincronização completa. Atualizando localStorage...');
 
         fecharModalChegada();
 
         // Garantir que a previsão foi atualizada para CHEGOU no localStorage
         const previsoesCurrent = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-        const idx = previsoesCurrent.findIndex(p => 
-            (p.sj || '').toString().trim().toUpperCase() === payload.sj &&
-            (p.container || '').toString().trim().toUpperCase() === payload.container
-        );
+        console.log('[confirmarChegada] Previsões carregadas do localStorage:', previsoesCurrent.length, 'itens');
+        
+        const idx = previsoesCurrent.findIndex(p => {
+            const pSj = (p.sj || '').toString().trim().toUpperCase();
+            const pContainer = (p.container || '').toString().trim().toUpperCase();
+            const match = pSj === payload.sj && pContainer === payload.container;
+            console.log('[confirmarChegada] Comparando:', {esperado: {sj: payload.sj, container: payload.container}, local: {sj: pSj, container: pContainer}, match});
+            return match;
+        });
+        
         if (idx !== -1) {
             previsoesCurrent[idx].status = 'CHEGOU';
             localStorage.setItem('previsoesChegada', JSON.stringify(previsoesCurrent));
-            console.log('[confirmarChegada] Status local atualizado para CHEGOU');
+            console.log('[confirmarChegada] Status local atualizado para CHEGOU no índice:', idx);
+        } else {
+            console.error('[confirmarChegada] ERRO CRÍTICO: Item não encontrado para atualização!', {
+                sj: payload.sj, 
+                container: payload.container,
+                previsõesDisponiveis: previsoesCurrent.map(p => ({sj: p.sj, container: p.container, status: p.status}))
+            });
+            console.warn('[confirmarChegada] Forçando sincronização novamente do servidor...');
+            // Sincronizar novamente se o item não foi encontrado
+            try {
+                if (window.apiClient && window.apiClient.getPrevisoes) {
+                    const previsõesAtualizadas = await window.apiClient.getPrevisoes();
+                    if (Array.isArray(previsõesAtualizadas)) {
+                        localStorage.setItem('previsoesChegada', JSON.stringify(previsõesAtualizadas));
+                        console.log('[confirmarChegada] Previsões sincronizadas novamente. Total:', previsõesAtualizadas.length);
+                    }
+                }
+            } catch (resyncErr) {
+                console.error('[confirmarChegada] Erro ao ressincronizar:', resyncErr);
+            }
         }
         
         carregarDashboardOperador();

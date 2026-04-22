@@ -36,8 +36,13 @@ async function syncToLocal(fetchFn, storageKey) {
   if (storageKey === "previsoesChegada") {
     normalizados = rows.map((row) => ({
       ...row,
+      status: (row.status ?? '').toString().trim().toUpperCase(),
       dataPrevisao: row.dataPrevisao ?? row.dataprevisao ?? row.data_previsao ?? row.data_previsao,
       dataChegada: row.dataChegada ?? row.datachegada ?? row.data_chegada ?? null,
+      sj: (row.sj ?? '').toString().trim().toUpperCase(),
+      container: (row.container ?? '').toString().trim().toUpperCase(),
+      conteudo: (row.conteudo ?? '').toString().trim().toUpperCase(),
+      transportadora: (row.transportadora ?? '').toString().trim().toUpperCase(),
     }));
   }
 
@@ -142,14 +147,46 @@ const DB = {
     console.log('[DB.registrarChegada] Resposta da API:', response);
     
     console.log('[DB.registrarChegada] Sincronizando previsões...');
-    await syncToLocal(window.apiClient.getPrevisoes, "previsoesChegada");
-    const previsoesAtualizadas = readLocal("previsoesChegada", []);
-    console.log('[DB.registrarChegada] Previsões após sincronização:', previsoesAtualizadas.length, 'itens');
+    try {
+      await syncToLocal(window.apiClient.getPrevisoes, "previsoesChegada");
+      const previsoesAtualizadas = readLocal("previsoesChegada", []);
+      console.log('[DB.registrarChegada] Previsões após sincronização:', previsoesAtualizadas.length, 'itens');
+      
+      // Log dos itens para verificação
+      const itemEncontrado = previsoesAtualizadas.find(p => 
+        (p.sj || '').toString().trim().toUpperCase() === dados.sj && 
+        (p.container || '').toString().trim().toUpperCase() === dados.container
+      );
+      if (itemEncontrado) {
+        console.log('[DB.registrarChegada] Item encontrado no servidor:', {sj: itemEncontrado.sj, container: itemEncontrado.container, status: itemEncontrado.status});
+      } else {
+        console.warn('[DB.registrarChegada] AVISO: Item não encontrado nas previsões após sincronização!', {sj: dados.sj, container: dados.container});
+      }
+    } catch (syncErr) {
+      console.error('[DB.registrarChegada] Erro ao sincronizar previsões:', syncErr);
+      throw new Error('Erro ao sincronizar previsões: ' + syncErr.message);
+    }
     
     console.log('[DB.registrarChegada] Sincronizando histórico...');
-    await syncToLocal(window.apiClient.getHistorico, "historico");
-    const historicoAtualizado = readLocal("historico", []);
-    console.log('[DB.registrarChegada] Histórico após sincronização:', historicoAtualizado.length, 'itens');
+    try {
+      await syncToLocal(window.apiClient.getHistorico, "historico");
+      const historicoAtualizado = readLocal("historico", []);
+      console.log('[DB.registrarChegada] Histórico após sincronização:', historicoAtualizado.length, 'itens');
+      
+      // Log do novo item no histórico
+      const novoItem = historicoAtualizado.find(h => 
+        (h.sj || '').toString().trim().toUpperCase() === dados.sj && 
+        (h.container || '').toString().trim().toUpperCase() === dados.container
+      );
+      if (novoItem) {
+        console.log('[DB.registrarChegada] Novo item no histórico encontrado:', {sj: novoItem.sj, container: novoItem.container});
+      } else {
+        console.warn('[DB.registrarChegada] AVISO: Novo item não encontrado no histórico após sincronização!', {sj: dados.sj, container: dados.container});
+      }
+    } catch (syncErr) {
+      console.error('[DB.registrarChegada] Erro ao sincronizar histórico:', syncErr);
+      throw new Error('Erro ao sincronizar histórico: ' + syncErr.message);
+    }
     
     return response;
   },
