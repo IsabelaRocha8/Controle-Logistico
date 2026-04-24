@@ -195,9 +195,19 @@ function abrirModalEtiqueta(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const pendentes = obterPendentesComPrevisao(previsoes);
     
-    previsaoParaEtiqueta = previsoes.indexOf(pendentes[index]);
-    
+    // Armazenar o OBJETO COMPLETO da previsão, não apenas o índice
     const previsao = pendentes[index];
+    if (!previsao) return;
+    
+    previsaoParaEtiqueta = {
+        sj: previsao.sj,
+        conteudo: previsao.conteudo,
+        container: previsao.container,
+        transportadora: previsao.transportadora,
+        dataPrevisao: previsao.dataPrevisao,
+        status: previsao.status
+    };
+    
     document.getElementById('modalEtiquetaSJ').textContent = previsao.sj;
     document.getElementById('modalEtiquetaConteudo').textContent = previsao.conteudo || '-';
     document.getElementById('quantidadeEtiquetas').value = 1;
@@ -219,7 +229,8 @@ function fecharModalEtiqueta() {
 
 // ================= CONFIRMAR IMPRESSAO ETIQUETA =================
 function confirmarImpressaoEtiqueta() {
-    if (previsaoParaEtiqueta === null) return;
+    // Validar que temos um objeto de previsão armazenado (não apenas um índice)
+    if (!previsaoParaEtiqueta || typeof previsaoParaEtiqueta !== 'object') return;
     
     const quantidade = parseInt(document.getElementById('quantidadeEtiquetas').value);
     const mensagemErro = document.getElementById('mensagemErroEtiqueta');
@@ -230,11 +241,11 @@ function confirmarImpressaoEtiqueta() {
         return;
     }
     
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const etiquetas = JSON.parse(localStorage.getItem('etiquetasImpressas')) || [];
     const agora = new Date();
     
-    const previsao = previsoes[previsaoParaEtiqueta];
+    // Usar o objeto de previsão armazenado (dados garantidos do item clicado)
+    const previsao = previsaoParaEtiqueta;
     
     const etiqueta = {
         sj: previsao.sj,
@@ -333,9 +344,19 @@ function abrirModalChegada(index) {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const pendentes = obterPendentesComPrevisao(previsoes);
     
-    previsaoSelecionada = previsoes.indexOf(pendentes[index]);
-    
+    // Armazenar o OBJETO COMPLETO da previsão, não apenas o índice
     const previsao = pendentes[index];
+    if (!previsao) return;
+    
+    previsaoSelecionada = {
+        sj: previsao.sj,
+        container: previsao.container,
+        conteudo: previsao.conteudo,
+        transportadora: previsao.transportadora,
+        dataPrevisao: previsao.dataPrevisao,
+        status: previsao.status
+    };
+    
     document.getElementById('modalContainer').textContent = previsao.container;
     document.getElementById('modalSJ').textContent = previsao.sj;
     
@@ -358,6 +379,7 @@ function abrirModalChegada(index) {
 // ================= FECHAR MODAL =================
 function fecharModalChegada() {
     document.getElementById('modalRegistrarChegada').style.display = 'none';
+    // Limpar o objeto armazenado (não apenas null)
     previsaoSelecionada = null;
 }
 
@@ -387,7 +409,8 @@ function fecharModalFeedbackChegada() {
 
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
-    if (previsaoSelecionada === null) return;
+    // Validar que temos um objeto de previsão armazenado (não apenas um índice)
+    if (!previsaoSelecionada || typeof previsaoSelecionada !== 'object') return;
 
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
@@ -413,12 +436,10 @@ async function confirmarChegada() {
         return;
     }
 
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const agora = new Date();
     
-    // Obter o item selecionado
-    const item = previsoes[previsaoSelecionada];
-    if (!item) return;
+    // Usar o objeto de previsão armazenado (dados garantidos do container clicado)
+    const item = previsaoSelecionada;
 
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
 
