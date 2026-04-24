@@ -1,4 +1,6 @@
 // ================= INICIALIZAR PAINEL OPERADOR =================
+let modalChegadaData = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     carregarChegadasHoje();
     carregarTodasPrevisoes();
@@ -48,6 +50,17 @@ function carregarChegadasHoje() {
             tr.className = 'linha-atrasado';
         }
         
+        // Usar identificador único para o botão
+        const itemId = `${item.container}-${item.sj}`.replace(/[^a-zA-Z0-9-_]/g, '_');
+        
+        // Armazenar dados do item no dataset da linha
+        tr.dataset.container = item.container;
+        tr.dataset.sj = item.sj;
+        tr.dataset.conteudo = item.conteudo || '';
+        tr.dataset.transportadora = item.transportadora || '';
+        tr.dataset.dataPrevisao = item.dataPrevisao || '';
+        tr.dataset.status = item.status || '';
+        
         let badgeClass = '';
         let badgeIcon = '';
         
@@ -70,7 +83,7 @@ function carregarChegadasHoje() {
             <td><span class="badge ${badgeClass}">${badgeIcon}${item.status === 'CHEGOU' ? 'CHEGOU' : classificacao}</span></td>
             <td>
                 ${item.status !== 'CHEGOU' ? 
-                    `<button class="btn btn-sm btn-primary" onclick="abrirModalChegada('${item.sj}', '${item.container}')">
+                    `<button class="btn btn-sm btn-primary btn-registrar-chegada" data-item-id="${itemId}">
                         <i class="fas fa-check"></i> Registrar Chegada
                     </button>` : 
                     '<span style="color: #28a745; font-weight: 600;"><i class="fas fa-check-circle"></i> Registrado</span>'
@@ -79,6 +92,21 @@ function carregarChegadasHoje() {
         `;
         
         tbody.appendChild(tr);
+    });
+    
+    // Adicionar event listeners aos botões
+    anexarEventosBotoesChegada();
+}
+
+function anexarEventosBotoesChegada() {
+    document.querySelectorAll('.btn-registrar-chegada').forEach(botao => {
+        botao.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tr = this.closest('tr');
+            if (tr) {
+                abrirModalChegada(tr);
+            }
+        });
     });
 }
 
@@ -126,7 +154,22 @@ function carregarTodasPrevisoes() {
 }
 
 // ================= ABRIR MODAL CHEGADA =================
-function abrirModalChegada(sj, container) {
+function abrirModalChegada(row) {
+    // Obter dados do dataset da linha (não usar strings passadas como parâmetros)
+    const sj = row.dataset.sj;
+    const container = row.dataset.container;
+    const conteudo = row.dataset.conteudo;
+    
+    // Armazenar dados completos do item
+    modalChegadaData = {
+        sj,
+        container,
+        conteudo,
+        transportadora: row.dataset.transportadora,
+        dataPrevisao: row.dataset.dataPrevisao,
+        status: row.dataset.status
+    };
+    
     document.getElementById('sjChegada').value = sj;
     document.getElementById('containerChegada').value = container;
     
@@ -149,12 +192,15 @@ function abrirModalChegada(sj, container) {
 // ================= FECHAR MODAL =================
 function fecharModal() {
     document.getElementById('modalChegada').style.display = 'none';
+    modalChegadaData = null;
 }
 
 // ================= SALVAR CHEGADA =================
 async function salvarChegada() {
-    const sj = document.getElementById('sjChegada').value;
-    const container = document.getElementById('containerChegada').value;
+    if (!modalChegadaData) return;
+    
+    const sj = modalChegadaData.sj;
+    const container = modalChegadaData.container;
     const doca = document.getElementById('docaChegada').value;
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const hora = document.getElementById('horaChegada').value;
@@ -174,7 +220,9 @@ async function salvarChegada() {
         container: container,
         doca: doca,
         responsavel: responsavel,
-        hora: hora
+        hora: hora,
+        conteudo: modalChegadaData.conteudo,
+        transportadora: modalChegadaData.transportadora
     });
     
     fecharModal();
@@ -203,8 +251,8 @@ async function registrarChegada(dados) {
             horaInicio: dados.hora,
             horaFinal: dados.hora, // Painel simplificado assume hora única ou precisa de ajuste posterior
             responsavel: dados.responsavel,
-            transportadora: item.transportadora || '-',
-            modalidade: (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo',
+            transportadora: dados.transportadora || item.transportadora || '-',
+            modalidade: (dados.conteudo && dados.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo',
             dataRegistro: agora.toISOString(),
             tempoMinutos: 0,
             tempoFormatado: '00:00'

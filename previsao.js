@@ -4,7 +4,8 @@
 
 let containersAdicionados = [];
 let filtroAtivo = false;
-let previsaoSelecionada = null;
+// Armazenar dados do item selecionado no modal (evitar variáveis globais desincronizadas)
+let modalChegadaData = null;
 let previsaoParaExcluir = null;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -206,22 +207,42 @@ function carregarContainerCards() {
         return;
     }
 
-    containerUI.innerHTML = pendentes.map((item, index) => `
-        <div class="container-card">
-            <div class="container-card-header">
-                <span class="badge badge-${item.status.toLowerCase()}">${item.status}</span>
-                <span class="badge modal-tag">${item.modalImportacao || 'Marítimo'}</span>
+    containerUI.innerHTML = pendentes.map((item) => {
+        // Usar identificador único baseado em container + sj
+        const itemId = `${item.container}-${item.sj}`.replace(/[^a-zA-Z0-9-_]/g, '_');
+        return `
+            <div class="container-card" id="card-${itemId}" data-container="${item.container}" data-sj="${item.sj}" data-conteudo="${item.conteudo || ''}" data-transportadora="${item.transportadora || ''}" data-data-previsao="${item.dataPrevisao || ''}" data-status="${item.status || ''}" data-modal-importacao="${item.modalImportacao || 'Marítimo'}">
+                <div class="container-card-header">
+                    <span class="badge badge-${item.status.toLowerCase()}">${item.status}</span>
+                    <span class="badge modal-tag">${item.modalImportacao || 'Marítimo'}</span>
+                </div>
+                <div class="container-card-body">
+                    <p><strong>Container:</strong> ${item.container}</p>
+                    <p><strong>SJ:</strong> ${item.sj}</p>
+                    <p><strong>Previsão:</strong> ${new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div class="container-card-footer">
+                    <button class="btn-card-action btn-registrar-chegada" data-card-id="${itemId}">Registrar Chegada</button>
+                </div>
             </div>
-            <div class="container-card-body">
-                <p><strong>Container:</strong> ${item.container}</p>
-                <p><strong>SJ:</strong> ${item.sj}</p>
-                <p><strong>Previsão:</strong> ${new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-            </div>
-            <div class="container-card-footer">
-                <button class="btn-card-action" onclick="abrirModalChegada(${index})">Registrar Chegada</button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+    
+    // Adicionar event listeners aos botões
+    anexarEventosBotoesChegada();
+}
+
+function anexarEventosBotoesChegada() {
+    document.querySelectorAll('.btn-registrar-chegada').forEach(botao => {
+        botao.addEventListener('click', function(e) {
+            e.preventDefault();
+            const cardId = this.dataset.cardId;
+            const card = document.getElementById(`card-${cardId}`);
+            if (card) {
+                abrirModalChegada(card);
+            }
+        });
+    });
 }
 
 function obterPrevisoesPendentes(previsoes) {
@@ -246,16 +267,25 @@ function verificarPermissoesCadastro() {
 }
 
 // ================= REGISTRAR CHEGADA =================
-function abrirModalChegada(index) {
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = obterPrevisoesPendentes(previsoes);
+function abrirModalChegada(card) {
+    // Obter dados do dataset do card (não usar índices)
+    const container = card.dataset.container;
+    const sj = card.dataset.sj;
+    const conteudo = card.dataset.conteudo;
+    
+    // Armazenar dados no objeto modalChegadaData
+    modalChegadaData = {
+        container,
+        sj,
+        conteudo,
+        transportadora: card.dataset.transportadora,
+        dataPrevisao: card.dataset.dataPrevisao,
+        status: card.dataset.status,
+        modalImportacao: card.dataset.modalImportacao
+    };
 
-    previsaoSelecionada = previsoes.indexOf(pendentes[index]);
-    const previsao = pendentes[index];
-    if (!previsao) return;
-
-    document.getElementById('modalContainer').textContent = previsao.container;
-    document.getElementById('modalSJ').textContent = previsao.sj;
+    document.getElementById('modalContainer').textContent = container;
+    document.getElementById('modalSJ').textContent = sj;
 
     document.getElementById('responsavelChegada').value = '';
     document.getElementById('cteChegada').value = '';
@@ -274,7 +304,7 @@ function abrirModalChegada(index) {
 
 function fecharModalChegada() {
     document.getElementById('modalRegistrarChegada').style.display = 'none';
-    previsaoSelecionada = null;
+    modalChegadaData = null;
 }
 
 let feedbackChegadaSucesso = false;
@@ -312,7 +342,7 @@ function fecharModalFeedbackChegada() {
 }
 
 async function confirmarChegada() {
-    if (previsaoSelecionada === null) return;
+    if (!modalChegadaData) return;
 
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
@@ -338,11 +368,9 @@ async function confirmarChegada() {
         return;
     }
 
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const item = previsoes[previsaoSelecionada];
-    if (!item) return;
-
     const agora = new Date();
+    // Usar dados armazenados no modalChegadaData
+    const item = modalChegadaData;
     const modalidade = (item.modalImportacao === 'Aereo') ? 'Aéreo' : 'Marítimo';
 
     const payloadChegada = {
@@ -368,10 +396,18 @@ async function confirmarChegada() {
             console.log('[confirmarChegada] Sucesso - Atualizado via registrarChegada');
         } else if (window.DB?.adicionarHistorico) {
             await window.DB.adicionarHistorico(payloadChegada);
+            const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
             const hoje = agora.toISOString().split('T')[0];
-            previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
-            localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
-            console.log('[confirmarChegada] Sucesso - Atualizado via adicionarHistorico');
+            const idx = previsoes.findIndex(p => {
+                const pSj = (p.sj || '').toString().trim().toUpperCase();
+                const pContainer = (p.container || '').toString().trim().toUpperCase();
+                return pSj === item.sj.toUpperCase() && pContainer === item.container.toUpperCase();
+            });
+            if (idx !== -1) {
+                previsoes[idx] = { ...previsoes[idx], status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
+                localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+                console.log('[confirmarChegada] Sucesso - Atualizado via adicionarHistorico');
+            }
         } else {
             throw new Error('Integração de API indisponível.');
         }

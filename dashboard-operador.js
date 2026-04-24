@@ -9,8 +9,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     adicionarConversaoMaiusculo('cteChegada');
 });
 
-let previsaoSelecionada = null;
-let previsaoParaEtiqueta = null;
+// Armazenar dados do item selecionado no modal (evitar variáveis globais)
+let modalChegadaData = null;
+let modalEtiquetaData = null;
 
 function obterPendentesComPrevisao(previsoes) {
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
@@ -74,7 +75,7 @@ function exibirContainersPendentes(dados) {
     
     container.innerHTML = '';
     
-    dados.forEach((item, index) => {
+    dados.forEach((item) => {
         const classificacao = classificarPrevisao(item.dataPrevisao);
         const badgeClass = classificacao === 'ATRASADO' ? 'badge-atrasado' : 
                           classificacao === 'EM DIA' ? 'badge-em-dia' : 'badge-adiantado';
@@ -85,6 +86,18 @@ function exibirContainersPendentes(dados) {
         
         const card = document.createElement('div');
         card.className = 'container-card';
+        
+        // Usar identificador único baseado em container + sj
+        const itemId = `${item.container}-${item.sj}`.replace(/[^a-zA-Z0-9-_]/g, '_');
+        card.id = `card-${itemId}`;
+        
+        // Armazenar dados do item no dataset do card
+        card.dataset.container = item.container;
+        card.dataset.sj = item.sj;
+        card.dataset.conteudo = item.conteudo || '';
+        card.dataset.transportadora = item.transportadora || '';
+        card.dataset.dataPrevisao = item.dataPrevisao || '';
+        card.dataset.status = item.status || '';
         
         card.innerHTML = `
             <div class="container-card-header">
@@ -131,10 +144,10 @@ function exibirContainersPendentes(dados) {
                 </div>
             </div>
             <div class="container-card-footer">
-                <button class="btn-card-action" onclick="abrirModalEtiqueta(${index})" style="background: #00469B;">
+                <button class="btn-card-action btn-imprimir-etiqueta" style="background: #00469B;" data-card-id="${itemId}">
                     <i class="fas fa-print"></i> Imprimir Etiqueta
                 </button>
-                <button class="btn-card-action" onclick="abrirModalChegada(${index})">
+                <button class="btn-card-action btn-registrar-chegada" data-card-id="${itemId}">
                     <i class="fas fa-truck-loading"></i> Registrar Chegada
                 </button>
             </div>
@@ -142,18 +155,57 @@ function exibirContainersPendentes(dados) {
         
         container.appendChild(card);
     });
+    
+    // Adicionar event listeners (sem usar onclick inline)
+    anexarEventosBotoes();
+}
+
+// ================= ANEXAR EVENTOS AOS BOTÕES =================
+function anexarEventosBotoes() {
+    // Event listener para botões "Registrar Chegada"
+    document.querySelectorAll('.btn-registrar-chegada').forEach(botao => {
+        botao.addEventListener('click', function(e) {
+            e.preventDefault();
+            const cardId = this.dataset.cardId;
+            const card = document.getElementById(`card-${cardId}`);
+            if (card) {
+                abrirModalChegada(card);
+            }
+        });
+    });
+    
+    // Event listener para botões "Imprimir Etiqueta"
+    document.querySelectorAll('.btn-imprimir-etiqueta').forEach(botao => {
+        botao.addEventListener('click', function(e) {
+            e.preventDefault();
+            const cardId = this.dataset.cardId;
+            const card = document.getElementById(`card-${cardId}`);
+            if (card) {
+                abrirModalEtiqueta(card);
+            }
+        });
+    });
 }
 
 // ================= ABRIR MODAL ETIQUETA =================
-function abrirModalEtiqueta(index) {
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = obterPendentesComPrevisao(previsoes);
+function abrirModalEtiqueta(card) {
+    // Obter dados do dataset do card (não usar índices)
+    const container = card.dataset.container;
+    const sj = card.dataset.sj;
+    const conteudo = card.dataset.conteudo;
     
-    previsaoParaEtiqueta = previsoes.indexOf(pendentes[index]);
+    // Armazenar dados no objeto modalEtiquetaData
+    modalEtiquetaData = {
+        container,
+        sj,
+        conteudo,
+        transportadora: card.dataset.transportadora,
+        dataPrevisao: card.dataset.dataPrevisao,
+        status: card.dataset.status
+    };
     
-    const previsao = pendentes[index];
-    document.getElementById('modalEtiquetaSJ').textContent = previsao.sj;
-    document.getElementById('modalEtiquetaConteudo').textContent = previsao.conteudo || '-';
+    document.getElementById('modalEtiquetaSJ').textContent = sj;
+    document.getElementById('modalEtiquetaConteudo').textContent = conteudo || '-';
     document.getElementById('quantidadeEtiquetas').value = 1;
     
     const mensagemErro = document.getElementById('mensagemErroEtiqueta');
@@ -168,12 +220,12 @@ function abrirModalEtiqueta(index) {
 // ================= FECHAR MODAL ETIQUETA =================
 function fecharModalEtiqueta() {
     document.getElementById('modalImprimirEtiqueta').style.display = 'none';
-    previsaoParaEtiqueta = null;
+    modalEtiquetaData = null;
 }
 
 // ================= CONFIRMAR IMPRESSAO ETIQUETA =================
 function confirmarImpressaoEtiqueta() {
-    if (previsaoParaEtiqueta === null) return;
+    if (!modalEtiquetaData) return;
     
     const quantidade = parseInt(document.getElementById('quantidadeEtiquetas').value);
     const mensagemErro = document.getElementById('mensagemErroEtiqueta');
@@ -184,18 +236,15 @@ function confirmarImpressaoEtiqueta() {
         return;
     }
     
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const etiquetas = JSON.parse(localStorage.getItem('etiquetasImpressas')) || [];
     const agora = new Date();
     
-    const previsao = previsoes[previsaoParaEtiqueta];
-    
     const etiqueta = {
-        sj: previsao.sj,
-        conteudo: previsao.conteudo,
-        container: previsao.container,
-        transportadora: previsao.transportadora,
-        dataPrevisao: previsao.dataPrevisao,
+        sj: modalEtiquetaData.sj,
+        conteudo: modalEtiquetaData.conteudo,
+        container: modalEtiquetaData.container,
+        transportadora: modalEtiquetaData.transportadora,
+        dataPrevisao: modalEtiquetaData.dataPrevisao,
         quantidade: quantidade,
         dataImpressao: agora.toISOString(),
         usuario: localStorage.getItem('usuarioLogado') || 'OPERADOR',
@@ -205,7 +254,7 @@ function confirmarImpressaoEtiqueta() {
     etiquetas.push(etiqueta);
     localStorage.setItem('etiquetasImpressas', JSON.stringify(etiquetas));
     
-    imprimirEtiqueta(previsao, quantidade);
+    imprimirEtiqueta(modalEtiquetaData, quantidade);
     
     fecharModalEtiqueta();
     carregarDashboardOperador();
@@ -283,15 +332,24 @@ function imprimirEtiqueta(previsao, quantidade) {
 }
 
 // ================= ABRIR MODAL CHEGADA =================
-function abrirModalChegada(index) {
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = obterPendentesComPrevisao(previsoes);
+function abrirModalChegada(card) {
+    // Obter dados do dataset do card (não usar índices que podem desincronizar)
+    const container = card.dataset.container;
+    const sj = card.dataset.sj;
+    const conteudo = card.dataset.conteudo;
     
-    previsaoSelecionada = previsoes.indexOf(pendentes[index]);
+    // Armazenar dados completos do item no objeto modalChegadaData
+    modalChegadaData = {
+        container,
+        sj,
+        conteudo,
+        transportadora: card.dataset.transportadora,
+        dataPrevisao: card.dataset.dataPrevisao,
+        status: card.dataset.status
+    };
     
-    const previsao = pendentes[index];
-    document.getElementById('modalContainer').textContent = previsao.container;
-    document.getElementById('modalSJ').textContent = previsao.sj;
+    document.getElementById('modalContainer').textContent = container;
+    document.getElementById('modalSJ').textContent = sj;
     
     // Limpar campos
     document.getElementById('responsavelChegada').value = '';
@@ -312,7 +370,7 @@ function abrirModalChegada(index) {
 // ================= FECHAR MODAL =================
 function fecharModalChegada() {
     document.getElementById('modalRegistrarChegada').style.display = 'none';
-    previsaoSelecionada = null;
+    modalChegadaData = null;
 }
 
 let feedbackChegadaSucesso = false;
@@ -351,7 +409,7 @@ function fecharModalFeedbackChegada() {
 
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
-    if (previsaoSelecionada === null) return;
+    if (!modalChegadaData) return;
 
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
@@ -377,13 +435,10 @@ async function confirmarChegada() {
         return;
     }
 
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
     const agora = new Date();
     
-    // Obter o item selecionado
-    const item = previsoes[previsaoSelecionada];
-    if (!item) return;
-
+    // Usar dados armazenados no modalChegadaData
+    const item = modalChegadaData;
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
 
     try {
