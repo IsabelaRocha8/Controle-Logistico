@@ -7,10 +7,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     carregarDashboardOperador();
     adicionarConversaoMaiusculo('responsavelChegada');
     adicionarConversaoMaiusculo('cteChegada');
+
+    document.addEventListener('click', function(e) {
+        const botao = e.target.closest('.btn-registrar');
+        if (!botao) return;
+
+        const id = botao.dataset.id;
+        if (!id) return;
+
+        abrirModalRegistro(id);
+    });
 });
 
-let previsaoSelecionada = null;
 let previsaoParaEtiqueta = null;
+
+function gerarIdUnico() {
+    return crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10));
+}
 
 function obterPendentesComPrevisao(previsoes) {
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
@@ -67,6 +80,19 @@ function filtrarContainerMaisDemorado(pendentes) {
 // ================= CARREGAR DASHBOARD OPERADOR =================
 function carregarDashboardOperador() {
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    let atualizarIds = false;
+
+    previsoes.forEach(item => {
+        if (!item.id) {
+            item.id = gerarIdUnico();
+            atualizarIds = true;
+        }
+    });
+
+    if (atualizarIds) {
+        localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+    }
+
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
     
     // Calcular KPIs
@@ -180,7 +206,7 @@ function exibirContainersPendentes(dados) {
                 <button class="btn-card-action" onclick="abrirModalEtiqueta(${index})" style="background: #00469B;">
                     <i class="fas fa-print"></i> Imprimir Etiqueta
                 </button>
-                <button class="btn-card-action" onclick="abrirModalChegada(${index})">
+                <button type="button" class="btn-card-action btn-registrar" data-id="${item.id}">
                     <i class="fas fa-truck-loading"></i> Registrar Chegada
                 </button>
             </div>
@@ -340,47 +366,44 @@ function imprimirEtiqueta(previsao, quantidade) {
 }
 
 // ================= ABRIR MODAL CHEGADA =================
-function abrirModalChegada(index) {
+function abrirModalRegistro(id) {
+    if (!id) return;
+
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = obterPendentesComPrevisao(previsoes);
-    
-    // Armazenar o OBJETO COMPLETO da previsão, não apenas o índice
-    const previsao = pendentes[index];
+    const previsao = previsoes.find(item => item.id === id);
     if (!previsao) return;
-    
-    previsaoSelecionada = {
-        sj: previsao.sj,
-        container: previsao.container,
-        conteudo: previsao.conteudo,
-        transportadora: previsao.transportadora,
-        dataPrevisao: previsao.dataPrevisao,
-        status: previsao.status
-    };
-    
+
+    const modal = document.getElementById('modalRegistrarChegada');
+    if (modal) {
+        modal.dataset.selectedId = id;
+    }
+
     document.getElementById('modalContainer').textContent = previsao.container;
     document.getElementById('modalSJ').textContent = previsao.sj;
-    
+
     // Limpar campos
     document.getElementById('responsavelChegada').value = '';
     document.getElementById('cteChegada').value = '';
     document.getElementById('docaChegada').value = '';
     document.getElementById('horaInicioChegada').value = '';
     document.getElementById('horaFinalChegada').value = '';
-    
+
     const mensagemErro = document.getElementById('mensagemErroChegada');
     if (mensagemErro) {
         mensagemErro.textContent = '';
         mensagemErro.classList.remove('show');
     }
-    
+
     document.getElementById('modalRegistrarChegada').style.display = 'flex';
 }
 
 // ================= FECHAR MODAL =================
 function fecharModalChegada() {
-    document.getElementById('modalRegistrarChegada').style.display = 'none';
-    // Limpar o objeto armazenado (não apenas null)
-    previsaoSelecionada = null;
+    const modal = document.getElementById('modalRegistrarChegada');
+    if (modal) {
+        modal.style.display = 'none';
+        delete modal.dataset.selectedId;
+    }
 }
 
 function exibirModalFeedbackChegada(tipo, mensagem) {
@@ -409,8 +432,9 @@ function fecharModalFeedbackChegada() {
 
 // ================= CONFIRMAR CHEGADA =================
 async function confirmarChegada() {
-    // Validar que temos um objeto de previsão armazenado (não apenas um índice)
-    if (!previsaoSelecionada || typeof previsaoSelecionada !== 'object') return;
+    const modal = document.getElementById('modalRegistrarChegada');
+    const selectedId = modal?.dataset.selectedId;
+    if (!selectedId) return;
 
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
@@ -436,11 +460,12 @@ async function confirmarChegada() {
         return;
     }
 
-    const agora = new Date();
-    
-    // Usar o objeto de previsão armazenado (dados garantidos do container clicado)
-    const item = previsaoSelecionada;
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const itemIndex = previsoes.findIndex(item => item.id === selectedId);
+    const item = itemIndex >= 0 ? previsoes[itemIndex] : null;
+    if (!item) return;
 
+    const agora = new Date();
     const modalidade = (item.conteudo && item.conteudo.toUpperCase().includes('AIR')) ? 'Aéreo' : 'Marítimo';
 
     try {
