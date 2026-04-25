@@ -370,12 +370,12 @@ function abrirModalRegistro(id) {
     if (!id) return;
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const previsao = previsoes.find(item => item.id === id);
+    const previsao = previsoes.find(item => String(item.id) === String(id));
     if (!previsao) return;
 
     const modal = document.getElementById('modalRegistrarChegada');
     if (modal) {
-        modal.dataset.selectedId = id;
+        modal.dataset.selectedId = String(id);
     }
 
     document.getElementById('modalContainer').textContent = previsao.container;
@@ -461,7 +461,7 @@ async function confirmarChegada() {
     }
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const itemIndex = previsoes.findIndex(item => item.id === selectedId);
+    const itemIndex = previsoes.findIndex(item => String(item.id) === String(selectedId));
     const item = itemIndex >= 0 ? previsoes[itemIndex] : null;
     if (!item) return;
 
@@ -506,6 +506,10 @@ async function confirmarChegada() {
     }
 
     exibirModalFeedbackChegada('sucesso', 'A chegada do container foi registrada no sistema.');
+
+    setTimeout(() => {
+        window.location.href = 'historico.html';
+    }, 900);
 }
 
 // ================= CALCULAR TEMPO MINUTOS =================
