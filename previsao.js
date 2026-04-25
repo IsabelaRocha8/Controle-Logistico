@@ -4,8 +4,11 @@
 
 let containersAdicionados = [];
 let filtroAtivo = false;
-let previsaoSelecionada = null;
 let previsaoParaExcluir = null;
+
+function gerarIdUnico() {
+    return crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10));
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formPrevisao');
@@ -38,6 +41,16 @@ document.addEventListener('DOMContentLoaded', function() {
         carregarContainerCards();
         verificarPermissoesCadastro();
         configurarCampoModal();
+
+        document.addEventListener('click', function(e) {
+            const botao = e.target.closest('.btn-registrar');
+            if (!botao) return;
+
+            const id = botao.dataset.id;
+            if (!id) return;
+
+            abrirModalRegistro(id);
+        });
     }
 });
 
@@ -154,6 +167,7 @@ async function salvarPrevisao() {
     const horaAgora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     const payload = containersAdicionados.map(cont => ({
+        id: gerarIdUnico(),
         status: 'PREVISTO',
         sj: sj,
         conteudo: conteudo || (modal === 'Aereo' ? 'CARGA AÉREA' : ''),
@@ -197,6 +211,19 @@ function carregarKPIsPrevisao() {
 
 function carregarContainerCards() {
     const dados = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    let atualizarIds = false;
+
+    dados.forEach(item => {
+        if (!item.id) {
+            item.id = gerarIdUnico();
+            atualizarIds = true;
+        }
+    });
+
+    if (atualizarIds) {
+        localStorage.setItem('previsoesChegada', JSON.stringify(dados));
+    }
+
     const pendentes = obterPrevisoesPendentes(dados);
     const containerUI = document.getElementById('containerCards');
     if (!containerUI) return;
@@ -218,7 +245,9 @@ function carregarContainerCards() {
                 <p><strong>Previsão:</strong> ${new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
             </div>
             <div class="container-card-footer">
-                <button class="btn-card-action" onclick="abrirModalChegada(${index})">Registrar Chegada</button>
+                <button type="button" class="btn-card-action btn-registrar" data-id="${item.id}">
+                    <i class="fas fa-truck-loading"></i> Registrar Chegada
+                </button>
             </div>
         </div>
     `).join('');
@@ -246,13 +275,17 @@ function verificarPermissoesCadastro() {
 }
 
 // ================= REGISTRAR CHEGADA =================
-function abrirModalChegada(index) {
-    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const pendentes = obterPrevisoesPendentes(previsoes);
+function abrirModalRegistro(id) {
+    if (!id) return;
 
-    previsaoSelecionada = previsoes.indexOf(pendentes[index]);
-    const previsao = pendentes[index];
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const previsao = previsoes.find(item => item.id === id);
     if (!previsao) return;
+
+    const modal = document.getElementById('modalRegistrarChegada');
+    if (modal) {
+        modal.dataset.selectedId = id;
+    }
 
     document.getElementById('modalContainer').textContent = previsao.container;
     document.getElementById('modalSJ').textContent = previsao.sj;
@@ -273,8 +306,11 @@ function abrirModalChegada(index) {
 }
 
 function fecharModalChegada() {
-    document.getElementById('modalRegistrarChegada').style.display = 'none';
-    previsaoSelecionada = null;
+    const modal = document.getElementById('modalRegistrarChegada');
+    if (modal) {
+        modal.style.display = 'none';
+        delete modal.dataset.selectedId;
+    }
 }
 
 function exibirModalFeedbackChegada(tipo, mensagem) {
@@ -302,7 +338,9 @@ function fecharModalFeedbackChegada() {
 }
 
 async function confirmarChegada() {
-    if (previsaoSelecionada === null) return;
+    const modal = document.getElementById('modalRegistrarChegada');
+    const selectedId = modal?.dataset.selectedId;
+    if (!selectedId) return;
 
     const responsavel = formatarMaiusculo(document.getElementById('responsavelChegada').value);
     const cte = formatarMaiusculo(document.getElementById('cteChegada').value);
@@ -329,7 +367,8 @@ async function confirmarChegada() {
     }
 
     const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
-    const item = previsoes[previsaoSelecionada];
+    const itemIndex = previsoes.findIndex(item => item.id === selectedId);
+    const item = itemIndex >= 0 ? previsoes[itemIndex] : null;
     if (!item) return;
 
     const agora = new Date();
@@ -364,7 +403,7 @@ async function confirmarChegada() {
         } else if (window.DB?.adicionarHistorico) {
             await window.DB.adicionarHistorico(payloadChegada);
             const hoje = agora.toISOString().split('T')[0];
-            previsoes[previsaoSelecionada] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
+            previsoes[itemIndex] = { ...item, status: 'CHEGOU', dataChegada: hoje, horaInicio, horaFinal, responsavel, cte, doca };
             localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
         } else {
             throw new Error('Integração de API indisponível.');
