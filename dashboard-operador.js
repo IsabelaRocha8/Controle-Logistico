@@ -37,7 +37,7 @@ function obterPendentesComPrevisao(previsoes) {
         .filter(item => {
             const status = (item?.status || '').toString().trim().toUpperCase();
             const container = (item?.container || '').toString().trim().toUpperCase();
-            return status !== 'CHEGOU' && !containersNoHistorico.has(container);
+            return status !== 'CHEGOU' && status !== 'CANCELADO' && !containersNoHistorico.has(container);
         })
         .sort((a, b) => {
             const dataA = a?.dataPrevisao ? new Date(a.dataPrevisao).getTime() : Number.MAX_SAFE_INTEGER;
@@ -114,17 +114,18 @@ function carregarDashboardOperador() {
             }
         }
     });
-    
-    previsoes.forEach(item => {
-        if (item.status !== 'CHEGOU') {
-            previstos++;
-            const classificacao = classificarPrevisao(item.dataPrevisao);
-            if (classificacao === 'ATRASADO') {
-                atrasados++;
-            }
+
+    const pendentes = obterPendentesComPrevisao(previsoes);
+    const hojeStr = new Date().toISOString().split('T')[0];
+
+    pendentes.forEach(item => {
+        previstos++;
+        const classificacao = classificarPrevisao(item.dataPrevisao);
+        if (classificacao === 'ATRASADO') {
+            atrasados++;
         }
     });
-    
+
     document.getElementById('totalAtrasados').textContent = atrasados;
     document.getElementById('totalChegados').textContent = chegadosHoje;
     document.getElementById('totalPrevistos').textContent = previstos;
