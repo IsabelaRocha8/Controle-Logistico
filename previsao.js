@@ -264,7 +264,7 @@ function obterPrevisoesPendentes(previsoes) {
     return previsoes.filter(item => {
         const status = (item?.status || '').toString().trim().toUpperCase();
         const container = (item?.container || '').toString().trim().toUpperCase();
-        return status !== 'CHEGOU' && status !== 'CANCELADO' && !containersNoHistorico.has(container);
+        return status !== 'CHEGOU' && !containersNoHistorico.has(container);
     });
 }
 

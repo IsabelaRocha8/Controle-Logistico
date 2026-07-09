@@ -25,6 +25,21 @@ function gerarIdUnico() {
     return crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10));
 }
 
+function formatarDataParaDia(valor) {
+    if (!valor) return '';
+
+    if (typeof valor === 'string') {
+        const texto = valor.trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(texto)) {
+            return texto.slice(0, 10);
+        }
+    }
+
+    const data = new Date(valor);
+    if (Number.isNaN(data.getTime())) return '';
+    return data.toISOString().split('T')[0];
+}
+
 function obterPendentesComPrevisao(previsoes) {
     const historico = JSON.parse(localStorage.getItem('historico')) || [];
     const containersNoHistorico = new Set(
@@ -93,30 +108,21 @@ function carregarDashboardOperador() {
         localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
     }
 
-    const historico = JSON.parse(localStorage.getItem('historico')) || [];
-    
+    const hojeStr = new Date().toISOString().split('T')[0];
+
     // Calcular KPIs
     let atrasados = 0;
-    let chegadosHoje = 0;
+    let cadastradosHoje = 0;
     let previstos = 0;
-    
-    // Obter data de hoje sem hora
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    
-    // Contar containers que chegaram HOJE
-    historico.forEach(item => {
-        if (item.dataRegistro) {
-            const dataRegistro = new Date(item.dataRegistro);
-            dataRegistro.setHours(0, 0, 0, 0);
-            if (dataRegistro.getTime() === hoje.getTime()) {
-                chegadosHoje++;
-            }
+
+    previsoes.forEach(item => {
+        const dataRegistroFormatada = formatarDataParaDia(item.dataRegistro || item.dataCadastro || item.dataCriacao);
+        if (dataRegistroFormatada === hojeStr) {
+            cadastradosHoje++;
         }
     });
 
     const pendentes = obterPendentesComPrevisao(previsoes);
-    const hojeStr = new Date().toISOString().split('T')[0];
 
     pendentes.forEach(item => {
         previstos++;
@@ -127,11 +133,10 @@ function carregarDashboardOperador() {
     });
 
     document.getElementById('totalAtrasados').textContent = atrasados;
-    document.getElementById('totalChegados').textContent = chegadosHoje;
+    document.getElementById('totalChegados').textContent = cadastradosHoje;
     document.getElementById('totalPrevistos').textContent = previstos;
     
     // Exibir containers pendentes com previsão de chegada cadastrada (excluindo o mais demorado)
-    const pendentes = obterPendentesComPrevisao(previsoes);
     const pendentesSemMaisDemorado = filtrarContainerMaisDemorado(pendentes);
     exibirContainersPendentes(pendentesSemMaisDemorado);
 }
@@ -151,6 +156,8 @@ function exibirContainersPendentes(dados) {
         const classificacao = classificarPrevisao(item.dataPrevisao);
         const badgeClass = classificacao === 'ATRASADO' ? 'badge-atrasado' : 
                           classificacao === 'EM DIA' ? 'badge-em-dia' : 'badge-adiantado';
+        const status = (item.status || 'PENDENTE').toString().toUpperCase();
+        const statusBadgeClass = status === 'CHEGOU' ? 'badge-chegou' : 'badge-previsto';
         
         const dataPrevisaoFormatada = item.dataPrevisao
             ? new Date(item.dataPrevisao + 'T00:00:00').toLocaleDateString('pt-BR')
@@ -162,7 +169,7 @@ function exibirContainersPendentes(dados) {
         card.innerHTML = `
             <div class="container-card-header">
                 <div class="container-card-badges">
-                    <span class="badge badge-${item.status.toLowerCase()}">${item.status}</span>
+                    <span class="badge ${statusBadgeClass}">${status}</span>
                     <span class="badge ${badgeClass}">${classificacao}</span>
                 </div>
             </div>
@@ -171,14 +178,14 @@ function exibirContainersPendentes(dados) {
                     <i class="fas fa-box"></i>
                     <div>
                         <span class="info-label">Container</span>
-                        <span class="info-value">${item.container}</span>
+                        <span class="info-value">${item.container || '-'}</span>
                     </div>
                 </div>
                 <div class="container-card-info">
                     <i class="fas fa-file-alt"></i>
                     <div>
                         <span class="info-label">SJ</span>
-                        <span class="info-value">${item.sj}</span>
+                        <span class="info-value">${item.sj || '-'}</span>
                     </div>
                 </div>
                 <div class="container-card-info">
