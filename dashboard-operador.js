@@ -17,6 +17,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         abrirModalRegistro(id);
     });
+
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'previsoesChegada') {
+            carregarDashboardOperador();
+        }
+    });
+
+    window.addEventListener('focus', carregarDashboardOperador);
+    setInterval(carregarDashboardOperador, 5000);
 });
 
 let previsaoParaEtiqueta = null;
@@ -38,6 +47,21 @@ function formatarDataParaDia(valor) {
     const data = new Date(valor);
     if (Number.isNaN(data.getTime())) return '';
     return data.toISOString().split('T')[0];
+}
+
+function atualizarPrevisaoLocal(id, dadosAtualizacao) {
+    const previsoes = JSON.parse(localStorage.getItem('previsoesChegada')) || [];
+    const index = previsoes.findIndex(item => String(item.id) === String(id));
+
+    if (index === -1) return false;
+
+    previsoes[index] = {
+        ...previsoes[index],
+        ...dadosAtualizacao
+    };
+
+    localStorage.setItem('previsoesChegada', JSON.stringify(previsoes));
+    return true;
 }
 
 function obterPendentesComPrevisao(previsoes) {
@@ -497,6 +521,15 @@ async function confirmarChegada() {
         });
 
         fecharModalChegada();
+
+        atualizarPrevisaoLocal(selectedId, {
+            status: 'CHEGOU',
+            dataChegada: agora.toISOString().split('T')[0],
+            horaChegada: horaInicio,
+            doca,
+            responsavel,
+            usuarioRegistro: (localStorage.getItem('usuarioLogado') || 'OPERADOR').toUpperCase()
+        });
 
         // Recarregar dados para garantir sincronia com banco/histórico
         if (window.DB && window.DB.init) {
