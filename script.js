@@ -883,15 +883,28 @@ function classificarPrevisao(dataPrevisao) {
     return 'ADIANTADO';
 }
 
+// ================= OBTER PREVISÕES PENDENTES =================
+function obterPrevisoesPendentes(previsoes) {
+    const historico = DB.obter('historico') || [];
+    const containersNoHistorico = new Set(
+        historico
+            .map(item => (item?.container || '').toString().trim().toUpperCase())
+            .filter(Boolean)
+    );
+
+    return previsoes.filter(item => {
+        const status = String(item.status || '').trim().toUpperCase();
+        const container = String(item.container || '').trim().toUpperCase();
+        return status !== 'CHEGOU' && status !== 'CANCELADO' && !containersNoHistorico.has(container);
+    });
+}
+
 // ================= CARREGAR PREVISÕES HOJE =================
 function carregarPrevisoesHoje() {
     const previsoes = DB.obter('previsoesChegada');
     const hoje = new Date().toISOString().split('T')[0];
 
-    const previsoesHoje = previsoes.filter(item => {
-        const status = String(item.status || '').trim().toUpperCase();
-        return item.dataPrevisao === hoje && status !== 'CHEGOU' && status !== 'CANCELADO';
-    });
+    const previsoesHoje = obterPrevisoesPendentes(previsoes).filter(item => item.dataPrevisao === hoje);
 
     const statusCount = {
         PREVISTO: 0,
@@ -1014,7 +1027,7 @@ function atualizarCards(historico) {
 
 // ================= CONTAR POR CLASSIFICAÇÃO =================
 function contarPorClassificacao() {
-    const previsoes = DB.obter('previsoesChegada');
+    const previsoes = obterPrevisoesPendentes(DB.obter('previsoesChegada'));
 
     let atrasados = 0;
     let emDia = 0;
