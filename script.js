@@ -888,7 +888,10 @@ function carregarPrevisoesHoje() {
     const previsoes = DB.obter('previsoesChegada');
     const hoje = new Date().toISOString().split('T')[0];
 
-    const previsoesHoje = previsoes.filter(item => item.dataPrevisao === hoje);
+    const previsoesHoje = previsoes.filter(item => {
+        const status = String(item.status || '').trim().toUpperCase();
+        return item.dataPrevisao === hoje && status !== 'CHEGOU' && status !== 'CANCELADO';
+    });
 
     const statusCount = {
         PREVISTO: 0,
@@ -898,8 +901,9 @@ function carregarPrevisoesHoje() {
     };
 
     previsoesHoje.forEach(item => {
-        if (statusCount[item.status] !== undefined) {
-            statusCount[item.status]++;
+        const status = String(item.status || '').trim().toUpperCase();
+        if (statusCount[status] !== undefined) {
+            statusCount[status]++;
         }
     });
 
@@ -1017,12 +1021,13 @@ function contarPorClassificacao() {
     let adiantados = 0;
 
     previsoes.forEach(item => {
-        if (item.status !== 'CHEGOU') {
-            const classificacao = classificarPrevisao(item.dataPrevisao);
-            if (classificacao === 'ATRASADO') atrasados++;
-            else if (classificacao === 'EM DIA') emDia++;
-            else if (classificacao === 'ADIANTADO') adiantados++;
-        }
+        const status = String(item.status || '').trim().toUpperCase();
+        if (status === 'CHEGOU' || status === 'CANCELADO') return;
+
+        const classificacao = classificarPrevisao(item.dataPrevisao);
+        if (classificacao === 'ATRASADO') atrasados++;
+        else if (classificacao === 'EM DIA') emDia++;
+        else if (classificacao === 'ADIANTADO') adiantados++;
     });
 
     return { atrasados, emDia, adiantados };
