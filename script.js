@@ -401,6 +401,15 @@ function validarContainerDuplicado(container, idExcluir = null) {
     });
 }
 
+// ================= VALIDAR CONTAINER EXISTENTE EM PREVISÃO =================
+function validarContainerExistenteEmPrevisao(container) {
+    const previsoes = window.DB?.obter('previsoesChegada') || [];
+    const previsoesLocais = JSON.parse(localStorage.getItem('previsoesChegada') || '[]');
+    const containerNorm = formatarMaiusculo(container);
+    return previsoes.some(item => item && item.container && formatarMaiusculo(item.container) === containerNorm)
+        || previsoesLocais.some(item => item && item.container && formatarMaiusculo(item.container) === containerNorm);
+}
+
 // ================= VALIDAR CONTAINER NA MESMA SJ =================
 function validarContainerNaMesmaSJ(sj, container) {
     const historico = DB.obter('historico') || [];
@@ -562,6 +571,13 @@ function salvarContainer(tipo) {
     const validacao = validarCampos(dados);
     if (!validacao.valido) {
         mensagemErro.textContent = validacao.mensagem;
+        mensagemErro.classList.add('show');
+        return;
+    }
+
+    // Impedir operador de cadastrar marítimo quando container já consta em previsão de chegada
+    if (tipo === 'maritimo' && obterPerfilUsuario() === 'OPERADOR' && validarContainerExistenteEmPrevisao(dados.container)) {
+        mensagemErro.textContent = 'Container já existe na Previsão de Chegada. Operador não pode cadastrar.';
         mensagemErro.classList.add('show');
         return;
     }
@@ -899,6 +915,33 @@ function obterPrevisoesPendentes(previsoes) {
     });
 }
 
+function isUsuarioIsabelaRocha() {
+    return String(localStorage.getItem('usuarioLogado') || '').toUpperCase() === 'ISABELAROCHA';
+}
+
+function validarDashboardPrevisoes() {
+    if (!isUsuarioIsabelaRocha()) return;
+
+    const previsoes = DB.obter('previsoesChegada') || [];
+    const historico = DB.obter('historico') || [];
+    const pendentes = obterPrevisoesPendentes(previsoes);
+
+    console.group('VALIDAÇÃO DASHBOARD PREVISÕES - IsabelaRocha');
+    console.log('Total previsoesChegada:', previsoes.length);
+    console.log('Total historico:', historico.length);
+    console.log('Total pendentes:', pendentes.length);
+    console.log('Total atrasados no dashboard:', contarPorClassificacao().atrasados);
+    console.log('Total atrasados em previsao.js (não disponível aqui): usar forecast page para comparar');
+    console.table(previsoes.map(item => ({
+        id: item.id,
+        status: item.status,
+        dataPrevisao: item.dataPrevisao,
+        container: item.container,
+        sj: item.sj
+    })).slice(0, 50));
+    console.groupEnd();
+}
+
 // ================= CARREGAR PREVISÕES HOJE =================
 function carregarPrevisoesHoje() {
     const previsoes = DB.obter('previsoesChegada');
@@ -1023,6 +1066,8 @@ function atualizarCards(historico) {
     if (elemAtrasados) elemAtrasados.textContent = classificacao.atrasados;
     if (elemEmDia) elemEmDia.textContent = classificacao.emDia;
     if (elemAdiantados) elemAdiantados.textContent = classificacao.adiantados;
+
+    validarDashboardPrevisoes();
 }
 
 // ================= CONTAR POR CLASSIFICAÇÃO =================
