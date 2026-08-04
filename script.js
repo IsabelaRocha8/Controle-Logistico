@@ -577,7 +577,7 @@ function salvarContainer(tipo) {
 
     // Impedir operador de cadastrar marítimo quando container já consta em previsão de chegada
     if (tipo === 'maritimo' && obterPerfilUsuario() === 'OPERADOR' && validarContainerExistenteEmPrevisao(dados.container)) {
-        mensagemErro.textContent = 'Container já existe na Previsão de Chegada. Operador não pode cadastrar.';
+        mensagemErro.textContent = 'Container já existe na Previsão de Chegada.';
         mensagemErro.classList.add('show');
         return;
     }
@@ -602,7 +602,7 @@ function salvarContainer(tipo) {
                 const historicoLocal = JSON.parse(localStorage.getItem('historico')) || [];
                 localStorage.setItem('historico', JSON.stringify([dados, ...historicoLocal]));
 
-                mensagemSucesso.textContent = 'Contentor registado com sucesso!';
+                mensagemSucesso.textContent = 'Container registado com sucesso!';
                 mensagemSucesso.classList.add('show');
 
                 // Limpa o formulário após o sucesso
